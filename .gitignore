@@ -1,0 +1,17 @@
+.DS_Store
+
+node_modules
+
+dist
+
+.astro
+.cache
+
+.env
+.env.*
+!.env.example
+
+.vscode
+.idea
+
+coverage

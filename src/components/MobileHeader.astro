@@ -1,0 +1,113 @@
+<div>
+    <button id="toggle-onthispage">
+        On this page
+        <svg viewBox="0 0 24 24" class="icon"><path d="M9 6l6 6l-6 6"></path></svg>
+    </button>
+    <button id="toggle-sidebar">
+        <svg viewBox="0 0 24 24" class="icon"
+            ><path d="M4 6l16 0"></path><path d="M4 12l16 0"></path><path d="M4 18l16 0"
+            ></path></svg
+        >
+        Menu
+    </button>
+</div>
+
+<script>
+    document.getElementById('toggle-sidebar')?.addEventListener('click', () => {
+        document.body.dataset.sidebarOpen = ''
+    })
+    const button = document.getElementById('toggle-onthispage')
+    button?.addEventListener('click', () => {
+        if ('onthispageOpen' in document.body.dataset) {
+            delete document.body.dataset.onthispageOpen
+            document.body.removeEventListener('click', listener)
+        } else {
+            document.body.dataset.onthispageOpen = ''
+            document.body.addEventListener('click', listener)
+        }
+    })
+    const onthispage = document.getElementById('onthispage')
+    const listener = (event: MouseEvent) => {
+        if (
+            event.target instanceof Node &&
+            (event.target instanceof HTMLAnchorElement || !onthispage?.contains(event.target)) &&
+            !button?.contains(event.target)
+        ) {
+            delete document.body.dataset.onthispageOpen
+            document.body.removeEventListener('click', listener)
+        }
+    }
+</script>
+
+<style>
+    div {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 3rem;
+        z-index: 10;
+
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: space-between;
+        height: 2.5rem;
+        padding: 0 1rem;
+        align-items: center;
+        font-size: 0.9rem;
+        backdrop-filter: blur(0.5rem);
+
+        background-color: #f0f4f8cc;
+        border-bottom: 1px solid #cbd5e1;
+        box-shadow: 0 0 0.5rem #0002;
+    }
+    :global(.dark) div {
+        background-color: #0c1223cc;
+        border-bottom: 1px solid #000;
+        box-shadow: 0 0 0.5rem #0004;
+    }
+    @media (min-width: 768px) {
+        div {
+            margin-left: 13rem;
+        }
+        :global(body:not(:has(#onthispage))) div {
+            display: none;
+        }
+        #toggle-sidebar {
+            display: none;
+        }
+    }
+    @media (min-width: 1024px) {
+        div {
+            display: none;
+        }
+    }
+    @media print {
+        div {
+            display: none;
+        }
+    }
+    button {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        color: #55647a;
+    }
+    :global(.dark) button {
+        color: #7d8ca2;
+    }
+    button:hover {
+        color: rgb(var(--color));
+    }
+    svg {
+        display: block;
+        height: 1.3rem;
+        width: 1.3rem;
+    }
+    #toggle-onthispage svg {
+        rotate: 0deg;
+        transition: rotate 200ms ease-in-out;
+    }
+    :global([data-onthispage-open]) #toggle-onthispage svg {
+        rotate: 90deg;
+    }
+</style>

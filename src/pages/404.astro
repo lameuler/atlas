@@ -1,0 +1,72 @@
+---
+import Layout from '../components/Layout.astro'
+---
+
+<Layout title="Page not found">
+    <article>
+        <span>404</span>
+        <h1>page not found</h1>
+        <div>
+            <a href="https://ler.quest">https://ler.quest</a>
+            <a href={import.meta.env.BASE_URL}>{import.meta.env.BASE_URL}</a>
+            <script is:inline>
+                ;(function () {
+                    const parent = document.currentScript?.parentElement
+                    if (!parent) return
+                    const parts = window.location.pathname.split(/\/+/).slice(1)
+                    parts.reduce((prev, curr) => {
+                        const joined = prev + '/' + curr
+                        const a = document.createElement('a')
+                        a.href = '/' + joined
+                        a.textContent = '/' + curr
+                        parent.appendChild(a)
+                        return joined
+                    })
+                    document.currentScript?.remove()
+                })()
+            </script>
+        </div>
+    </article>
+</Layout>
+
+<style>
+    article {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    h1 {
+        font-size: 1rem;
+        margin: 0;
+        font-weight: 500;
+        color: #d72424;
+    }
+    span {
+        font-size: 4.5rem;
+        font-weight: 700;
+    }
+    div {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.1rem;
+    }
+    div :global(a) {
+        color: var(--sub);
+    }
+    div a {
+        color: var(--accent);
+        font-weight: 500;
+    }
+    div :global(a:nth-last-child(1)) {
+        color: #d72424;
+        font-weight: 500;
+    }
+    div :global(a:hover) {
+        text-decoration: underline;
+    }
+</style>

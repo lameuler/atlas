@@ -1,0 +1,68 @@
+---
+interface Props {
+    name?: string
+    pages: { href: string; label: string; external?: boolean }[]
+}
+const { name, pages } = Astro.props
+---
+
+<div>
+    <span>{name}</span>
+    <ul>
+        {
+            pages.map(({ href, label, external }) => (
+                <li class={Astro.url.pathname === href ? 'active' : undefined}>
+                    <a {href}>
+                        {label}
+                        {external && (
+                            <svg viewBox="0 0 24 24" class="icon">
+                                <path d="M17 7l-10 10" />
+                                <path d="M8 7l9 0l0 9" />
+                            </svg>
+                        )}
+                    </a>
+                </li>
+            ))
+        }
+    </ul>
+</div>
+
+<style>
+    div {
+        padding-top: 0.5rem;
+    }
+    span {
+        display: block;
+        font-weight: 600;
+        padding: 0.5rem;
+    }
+    ul {
+        padding: 0;
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--sub);
+    }
+    li {
+        list-style: none;
+        margin-bottom: 0.25rem;
+    }
+    li.active {
+        font-weight: 500;
+        color: var(--accent);
+    }
+    li:not(.active):hover {
+        color: var(--accent-highlight);
+    }
+    a {
+        display: block;
+        padding: 0.25rem 0.5rem;
+        overflow-wrap: anywhere;
+        line-height: 1.2rem;
+    }
+    svg {
+        vertical-align: bottom;
+        width: 1.2rem;
+        height: 1.2rem;
+        margin-inline-start: 0.1rem;
+    }
+</style>

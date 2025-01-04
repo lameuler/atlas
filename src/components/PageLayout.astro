@@ -1,0 +1,66 @@
+---
+import '@lameuler/ler-astro/icon.css'
+import '../assets/global.css'
+
+import type { MarkdownHeading } from 'astro'
+import OnThisPage from './OnThisPage.astro'
+import Markdown from './Markdown.astro'
+import ViewOptions from './ViewOptions.svelte'
+import Layout from './Layout.astro'
+import PageNav from './PageNav.astro'
+import type { PageNavInfo } from '../sidebar'
+
+interface Props {
+    title: string
+    subtitle?: string
+    description?: string
+    headings?: MarkdownHeading[]
+    prev?: PageNavInfo
+    next?: PageNavInfo
+}
+
+const { title, subtitle, description, headings, prev, next } = Astro.props
+---
+
+<Layout {title} {description}>
+    <article data-pagefind-body>
+        <ViewOptions client:load />
+        <h1>{title}</h1>
+        <span>{subtitle}</span>
+        <Markdown>
+            <slot />
+        </Markdown>
+        <PageNav {prev} {next} />
+    </article>
+    {headings && <OnThisPage {headings} />}
+</Layout>
+
+<style>
+    article {
+        padding: 1rem;
+        overflow-x: hidden;
+        line-height: 1.8;
+        width: 100%;
+        max-width: var(--max-w-text);
+        margin: 0 auto;
+    }
+    @media (min-width: 768px) {
+        article {
+            padding: 1rem 2rem;
+        }
+    }
+    h1 {
+        margin: 2rem 0 0 0;
+        padding-bottom: 1rem;
+        font-size: 2.25rem;
+        line-height: 1.5;
+        font-weight: 700;
+        border-bottom: 1px solid var(--line);
+    }
+    span {
+        display: block;
+        color: var(--sub);
+        font-size: 0.9rem;
+        margin: 0.75rem 0 2rem 0;
+    }
+</style>

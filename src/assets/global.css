@@ -1,0 +1,124 @@
+* {
+    box-sizing: border-box;
+}
+html,
+body {
+    font-family: 'Lexend', sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    max-width: 100%;
+    background-color: #f2f5f8;
+    --text: 2, 6, 23;
+    color: rgb(var(--text));
+    scroll-padding-top: 6.5rem;
+    scroll-behavior: smooth;
+    --sub: #5d6b83;
+    --line: #a0b0c5;
+    --accent: #735bd3;
+    --accent-highlight: #47319c;
+    --bg-pre: #e7ecf1;
+    --bg-code: #dfe6eb;
+    --bg-code-highlight: #d6dfe9;
+
+    --max-w-text: 55rem;
+    --max-w-main: 90rem;
+    --gutter: max((100% - var(--max-w-main)) / 2, 0rem);
+}
+html.dark,
+.dark body {
+    background-color: #0c1220;
+    --text: 238, 240, 242;
+    color: rgb(var(--text));
+    --sub: #899db0;
+    --line: #334155;
+    --accent: #8f87ff;
+    --accent-highlight: #b8b3ff;
+    --bg-pre: #13192e;
+    --bg-code: #1e2541;
+    --bg-code-highlight: #262e4a;
+    color-scheme: dark;
+}
+@media (min-width: 1024px) {
+    html,
+    body {
+        scroll-padding-top: 4rem;
+    }
+}
+@media print {
+    html,
+    body {
+        background-color: white;
+    }
+}
+a {
+    color: inherit;
+    text-decoration: none;
+}
+button {
+    appearance: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+    border: none;
+    cursor: pointer;
+    color: currentColor;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+[data-font='mono'],
+.mono,
+code,
+pre,
+samp {
+    font-family: 'Jetbrains Mono', monospace;
+    font-variant-ligatures: none;
+    font-size: inherit;
+}
+[data-font='system'] :is([data-font='mono'], .mono, code, pre, samp) {
+    font-family: ui-monospace, Menlo, Monaco, 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono',
+        'Oxygen Mono', 'Ubuntu Mono', 'Source Code Pro', 'Fira Mono', 'Droid Sans Mono', 'Consolas',
+        'Courier New', monospace;
+}
+kbd {
+    font-family: inherit;
+}
+[data-font='sans-serif'] {
+    font-family: Lexend, sans-serif;
+}
+[data-font='serif'] {
+    font-family: Literata, serif;
+}
+[data-font='system'] {
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        Oxygen,
+        Ubuntu,
+        Cantarell,
+        'Open Sans',
+        'Helvetica Neue',
+        sans-serif;
+}
+
+.astro-code,
+.astro-code span {
+    color: var(--shiki-light);
+    background-color: var(--shiki-light-bg);
+    font-style: var(--shiki-light-font-style);
+    font-weight: var(--shiki-light-font-weight);
+    text-decoration: var(--shiki-light-text-decoration);
+}
+
+.dark .astro-code,
+.dark .astro-code span {
+    color: var(--shiki-dark);
+    background-color: var(--shiki-dark-bg);
+    font-style: var(--shiki-dark-font-style);
+    font-weight: var(--shiki-dark-font-weight);
+    text-decoration: var(--shiki-dark-text-decoration);
+}

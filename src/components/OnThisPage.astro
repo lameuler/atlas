@@ -1,0 +1,225 @@
+---
+import { MarkdownHeading } from 'astro'
+
+interface Props {
+    headings: MarkdownHeading[]
+}
+
+const { headings } = Astro.props
+---
+
+<script>
+    const headings: [HTMLElement, HTMLElement][] = []
+    const listener = () => {
+        let active: HTMLElement | null = null
+        let top = Number.NEGATIVE_INFINITY
+        for (const [heading] of headings) {
+            const rect = heading.getBoundingClientRect()
+            if (rect.top > top && rect.top <= 180) {
+                active = heading
+                top = rect.top
+            }
+        }
+        for (const [heading, li] of headings) {
+            if (heading === active) {
+                li.classList.add('active')
+                li.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                })
+            } else {
+                li.classList.remove('active')
+            }
+        }
+    }
+    const observer = new IntersectionObserver(listener, {
+        root: null,
+        rootMargin: '-180px 0px 0px 0px',
+        threshold: [1],
+    })
+    window.addEventListener('hashchange', listener)
+    const links = document.querySelectorAll<HTMLAnchorElement>('#onthispage a[data-depth]')
+    for (const link of links) {
+        const [base, id] = link.href.split('#')
+        if (!id || base !== window.location.origin + window.location.pathname) continue
+
+        const heading = document.getElementById(id)
+        if (heading && link.parentElement) {
+            headings.push([heading, link.parentElement])
+            observer.observe(heading)
+        } else {
+            link.remove()
+        }
+    }
+    document.getElementById('to-top')?.addEventListener('click', () => {
+        window.scrollTo(window.scrollX, 0)
+        delete document.body.dataset.onthispageOpen
+        if (window.location.href.includes('#')) {
+            history.pushState(null, '', window.location.href.split('#')[0])
+        }
+    })
+</script>
+
+<nav id="onthispage">
+    <ul>
+        <li>
+            <button id="to-top">
+                <svg viewBox="0 0 24 24" class="icon"
+                    ><path d="M12 5l0 14"></path><path d="M18 11l-6 -6"></path><path d="M6 11l6 -6"
+                    ></path></svg
+                >
+                Return to top
+            </button>
+        </li>
+        {
+            headings.map(({ text, slug, depth }) => (
+                <li>
+                    <a href={'#' + slug} data-depth={depth}>
+                        {text}
+                    </a>
+                </li>
+            ))
+        }
+    </ul>
+</nav>
+
+<style>
+    nav {
+        position: fixed;
+        top: 5.5rem;
+        right: var(--gutter);
+        width: 16rem;
+        max-height: calc(100% - 5.5rem);
+        overflow-y: auto;
+        padding: 0.3rem 0;
+        margin: -0.5rem 0.5rem 0.5rem 0.5rem;
+        background-color: #ecf0fbcc;
+        backdrop-filter: blur(0.5rem);
+        box-shadow: 0 0.5rem 1.5rem #0002;
+        z-index: 30;
+        border: 1px solid #bdcbe0;
+        border-radius: 0.6rem;
+        overscroll-behavior: contain;
+        scroll-padding: 1rem;
+
+        translate: 0 -1rem;
+        opacity: 0;
+        visibility: hidden;
+        transition-property: translate, opacity, visibility;
+        transition-duration: 200ms;
+        transition-timing-function: ease-in-out;
+    }
+    :global(.dark) nav {
+        background-color: #131c35cc;
+        border: 1px solid #2a384c;
+        box-shadow: 0 0.5rem 1.5rem #0005;
+    }
+    :global([data-onthispage-open]) nav {
+        translate: 0 0;
+        opacity: 1;
+        visibility: visible;
+    }
+    @media (min-width: 1024px) {
+        nav {
+            width: 12rem;
+            top: 3rem;
+            max-height: calc(100% - 3rem);
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 1rem 0;
+            margin: 0;
+            background-color: transparent;
+            z-index: 10;
+            translate: 0 0;
+            opacity: 1;
+            visibility: visible;
+        }
+        :global(.dark) nav {
+            box-shadow: none;
+            border: none;
+            background-color: transparent;
+        }
+        ul {
+            border-inline-start: 1px solid var(--line);
+        }
+    }
+    ul {
+        padding: 0;
+        margin: 0;
+        font-size: 0.9rem;
+        color: #55647a;
+    }
+    :global(.dark) ul {
+        color: #7d8ca2;
+    }
+    li {
+        list-style: none;
+        position: relative;
+    }
+    a {
+        display: block;
+        padding: 0.4rem 0.5rem;
+        overflow-wrap: anywhere;
+    }
+    a[data-depth='1'] {
+        font-size: 1rem;
+    }
+    a[data-depth='2'] {
+        padding-inline-start: 0.75rem;
+    }
+    a[data-depth='3'] {
+        padding-inline-start: 1.25rem;
+    }
+    a[data-depth='4'] {
+        padding-inline-start: 1.75rem;
+    }
+    a[data-depth='5'] {
+        padding-inline-start: 2.25rem;
+    }
+    a[data-depth='6'] {
+        padding-inline-start: 2.75rem;
+    }
+    li.active {
+        font-weight: 550;
+    }
+    li.active {
+        color: var(--accent);
+    }
+    li:not(.active):hover {
+        color: var(--accent-highlight);
+    }
+    li.active::before {
+        content: '';
+        position: absolute;
+        top: 3px;
+        bottom: 3px;
+        width: 4px;
+        margin: 0 -1px;
+        border-end-end-radius: 3px;
+        border-start-end-radius: 3px;
+        background-color: var(--accent);
+        opacity: 0.7;
+    }
+    button {
+        color: var(--accent);
+        padding: 0.25rem 0.4rem;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        gap: 0.1rem;
+    }
+    button:hover {
+        color: var(--accent-highlight);
+    }
+    svg {
+        width: 1.2rem;
+        height: 1.2rem;
+    }
+    @media print {
+        nav {
+            display: none;
+        }
+    }
+</style>

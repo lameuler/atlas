@@ -1,0 +1,122 @@
+---
+import type { PageNavInfo } from '../sidebar.js'
+
+interface Props {
+    prev?: PageNavInfo
+    next?: PageNavInfo
+}
+const { prev, next } = Astro.props
+---
+
+<nav>
+    {
+        prev && (
+            <a href={prev.href} class="prev">
+                {prev.external ? (
+                    <svg viewBox="0 0 24 24" class="icon">
+                        <path d="M7 7l10 10" />
+                        <path d="M16 7l-9 0l0 9" />
+                    </svg>
+                ) : (
+                    <svg viewBox="0 0 24 24" class="icon">
+                        <path d="M5 12l14 0" />
+                        <path d="M5 12l6 6" />
+                        <path d="M5 12l6 -6" />
+                    </svg>
+                )}
+                <div>
+                    {prev.group && (
+                        <span>
+                            {prev.group}
+                            <br />
+                        </span>
+                    )}
+                    <strong>{prev.label}</strong>
+                </div>
+            </a>
+        )
+    }
+    {
+        next && (
+            <a href={next.href} class="next">
+                <div>
+                    {next.group && (
+                        <span>
+                            {next.group}
+                            <br />
+                        </span>
+                    )}
+                    <strong>{next.label}</strong>
+                </div>
+                {next.external ? (
+                    <svg viewBox="0 0 24 24" class="icon">
+                        <path d="M17 7l-10 10" />
+                        <path d="M8 7l9 0l0 9" />
+                    </svg>
+                ) : (
+                    <svg viewBox="0 0 24 24" class="icon">
+                        <path d="M5 12l14 0" />
+                        <path d="M13 18l6 -6" />
+                        <path d="M13 6l6 6" />
+                    </svg>
+                )}
+            </a>
+        )
+    }
+</nav>
+
+<style>
+    nav {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+    a {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-block: 1rem 0.5rem;
+    }
+    a > svg {
+        width: 1.5rem;
+        height: 1.5rem;
+        flex-shrink: 0;
+        color: var(--accent);
+        stroke-width: 2.5px;
+    }
+    a:hover > svg {
+        color: var(--accent-highlight);
+    }
+    div {
+        line-height: 1.2;
+    }
+    span {
+        font-size: 0.85rem;
+        color: var(--sub);
+    }
+    strong {
+        font-weight: 600;
+    }
+    a:hover strong {
+        text-decoration: underline;
+    }
+    strong > svg {
+        width: 1.2rem;
+        height: 1.2rem;
+        vertical-align: bottom;
+        color: var(--sub);
+    }
+    .prev {
+        text-align: start;
+    }
+    .next {
+        text-align: end;
+        margin-inline-start: auto;
+    }
+    .prev.ext > svg {
+        transform: rotate(45deg);
+    }
+    .next.ext > svg {
+        transform: rotate(-45deg);
+    }
+</style>

@@ -1,0 +1,122 @@
+---
+import SidebarGroup from './SidebarGroup.astro'
+import { groups } from '../sidebar.js'
+---
+
+<nav id="sidebar">
+    <button data-hide-sidebar>
+        <svg viewBox="0 0 24 24" class="icon">
+            <path d="M18 6l-12 12"></path><path d="M6 6l12 12"></path>
+        </svg>
+        Close
+    </button>
+    {groups.map((group) => <SidebarGroup {...group} />)}
+    <script is:inline>
+        ;(function () {
+            const top = parseFloat(sessionStorage.getItem('sidebar:scroll') ?? '0')
+            document.currentScript?.parentElement?.scroll({ top, behavior: 'instant' })
+            document.currentScript?.remove()
+        })()
+    </script>
+</nav>
+<div data-hide-sidebar></div>
+
+<script>
+    document.querySelectorAll('[data-hide-sidebar]').forEach((element) => {
+        element.addEventListener('click', () => {
+            delete document.body.dataset.sidebarOpen
+        })
+    })
+    const sidebar = document.getElementById('sidebar')
+    if (sidebar) {
+        window.addEventListener('beforeunload', () => {
+            sessionStorage.setItem('sidebar:scroll', sidebar.scrollTop.toString())
+        })
+    }
+</script>
+
+<style>
+    nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 18rem;
+        z-index: 40;
+        padding: 0.5rem;
+        translate: -100% 0;
+        transition: translate 100ms ease-in-out;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+
+        background-color: #f0f4f8;
+        border-right: 1px solid #cbd5e1;
+        box-shadow: 0 0 0.5rem #0002;
+    }
+    :global(.dark) nav {
+        background-color: #0c1223;
+        border-right: 1px solid #000;
+        box-shadow: 0 0 0.5rem #0004;
+    }
+    :global([data-sidebar-open]) nav {
+        translate: 0 0;
+    }
+    div {
+        position: fixed;
+        z-index: 35;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        transition:
+            opacity 300ms ease-in-out,
+            visibility 300ms ease-in-out;
+        opacity: 0;
+        visibility: hidden;
+    }
+    :global([data-sidebar-open]) div {
+        opacity: 1;
+        visibility: visible;
+    }
+    button {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        padding: 0.2rem 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+        color: #55647a;
+    }
+    :global(.dark) button {
+        color: #7d8ca2;
+    }
+    button:hover {
+        color: rgb(var(--color));
+    }
+    svg {
+        width: 1.3rem;
+        height: 1.3rem;
+    }
+    @media (min-width: 768px) {
+        nav {
+            top: 3rem;
+            width: 12rem;
+            box-sizing: content-box;
+            padding-left: calc(var(--gutter) + 0.5rem);
+            z-index: 10;
+            translate: 0 0;
+        }
+        div {
+            display: none;
+        }
+        button {
+            display: none;
+        }
+    }
+    @media print {
+        nav {
+            display: none;
+        }
+    }
+</style>

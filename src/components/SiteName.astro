@@ -1,0 +1,61 @@
+---
+import { options } from '@lameuler/atlas:virtual'
+---
+
+<nav>
+    <a href="https://ler.quest" class="origin">
+        <img src="https://ler.quest/icons/favicon.svg" width="24" height="24" alt="🚀" />
+        <span>
+            <span>ler</span>.quest
+        </span>
+    </a>
+    <span class="slash">/</span>
+    <a href={import.meta.env.BASE_URL} class="name">{options.name}</a>
+    <span class="mono badge">beta</span>
+</nav>
+
+<style>
+    nav {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        padding-inline-start: 0.5rem;
+    }
+    img {
+        height: 1.5rem;
+        width: 1.5rem;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+
+    .origin {
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+    }
+    .origin > span {
+        display: none;
+    }
+    @media (min-width: 640px) {
+        .origin > span {
+            display: inline;
+        }
+    }
+    .origin > span > span {
+        font-weight: 600;
+    }
+    .slash {
+        opacity: 0.5;
+    }
+    .name {
+        font-weight: 500;
+    }
+    .badge {
+        border: 1px solid rgb(245, 158, 11);
+        background-color: rgba(245, 158, 11, 0.3);
+        font-size: 0.8rem;
+        border-radius: 0.3rem;
+        padding: 0 0.2rem;
+    }
+</style>
