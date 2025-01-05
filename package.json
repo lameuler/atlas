@@ -15,10 +15,14 @@
         "build": "node build.js && tsc",
         "format": "prettier . --write",
         "test": "echo \"Error: no test specified\" && exit 1",
-        "prepack": "npm run build"
+        "prepack": "npm install && npm run build"
     },
     "author": "Lam Eu Ler",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/lameuler/atlas.git"
+    },
     "workspaces": [
         ".",
         "demo"
