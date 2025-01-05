@@ -9,6 +9,7 @@ import type { Page } from './sidebar.js'
 export interface AtlasOptions {
     name: string
     github?: string
+    badge?: string
     sidebar?: {
         name?: string
         pages: Page[]
