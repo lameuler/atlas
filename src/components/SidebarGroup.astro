@@ -11,7 +11,13 @@ const { name, pages } = Astro.props
     <ul>
         {
             pages.map(({ href, label, external }) => (
-                <li class={Astro.url.pathname === href ? 'active' : undefined}>
+                <li
+                    class={
+                        Astro.url.pathname.replace(/\/+$/, '') === href.replace(/\/+$/, '')
+                            ? 'active'
+                            : undefined
+                    }
+                >
                     <a {href}>
                         {label}
                         {external && (
