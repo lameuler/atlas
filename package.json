@@ -52,5 +52,8 @@
         "pagefind": "^1.3.0",
         "svelte": "^5.16.0",
         "zod": "^3.24.1"
+    },
+    "publishConfig": {
+        "access": "public"
     }
 }
