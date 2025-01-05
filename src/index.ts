@@ -8,6 +8,7 @@ import type { Page } from './sidebar.js'
 
 export interface AtlasOptions {
     name: string
+    github?: string
     sidebar?: {
         name?: string
         pages: Page[]

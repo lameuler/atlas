@@ -9,6 +9,7 @@ export default defineConfig({
     integrations: [
         atlas({
             name: 'astro-notebook',
+            github: 'atlas',
             sidebar: [
                 {
                     name: 'Guides',
