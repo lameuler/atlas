@@ -75,7 +75,7 @@
                 const article = document.querySelector('body > main > article')
                 article.dataset.font = font
                 article.style.fontSize = size + 'rem'
-                article.style.lineHeight = line * 2 + ''
+                article.style.lineHeight = line * 1.8 + ''
             }
         })()
     </script>
