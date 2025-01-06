@@ -2,7 +2,7 @@
 import type { GetStaticPaths } from 'astro'
 import { getCollection, render } from 'astro:content'
 import PageLayout from '../components/PageLayout.astro'
-import { getEntryHref, getNextPage, getPageInfo, getPreviousPage } from '../sidebar.js'
+import { getEntryHref, getNextPage, getPageGroup, getPageInfo, getPreviousPage } from '../sidebar.js'
 
 export const getStaticPaths = (async () => {
     const entries = await getCollection('docs')
@@ -22,13 +22,15 @@ export const getStaticPaths = (async () => {
 
 const { entry } = Astro.props
 const { Content, headings } = await render(entry)
+const href = getEntryHref(entry.id)
 
+const group = getPageGroup(entry.id)
 const prev = entry.data.prev
     ? getPageInfo(entry.data.prev)
     : getPreviousPage(getEntryHref(entry.id))
 const next = entry.data.next ? getPageInfo(entry.data.next) : getNextPage(getEntryHref(entry.id))
 ---
 
-<PageLayout title={entry.data.title} subtitle={entry.data.subtitle} {headings} {prev} {next}>
+<PageLayout title={entry.data.title} {href} subtitle={entry.data.subtitle} {headings} {prev} {next} {group}>
     <Content />
 </PageLayout>

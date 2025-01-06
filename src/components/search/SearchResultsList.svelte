@@ -16,7 +16,6 @@
     $effect(() => {
         // reset the loaded and loading fragments when `results` is changed
         results
-        console.log(results.results.map(r => r.score))
         untrack(() => {
             i++
             loaded = []

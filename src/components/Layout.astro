@@ -35,6 +35,7 @@ const { title, description } = Astro.props
             sizes={[180, 192, 512, 1024]}
             type="image/png"
         />
+        <slot name="head"/>
     </Head>
     <body>
         <Header />

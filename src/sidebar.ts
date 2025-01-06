@@ -1,4 +1,4 @@
-import { options } from '@lameuler/atlas:virtual'
+import { options, buildConfig } from '@lameuler/atlas:virtual'
 import { getCollection } from 'astro:content'
 
 const entries = await getCollection('docs')
@@ -47,7 +47,11 @@ export function getPageInfo(page: Page) {
 }
 
 export function getEntryHref(id: string) {
-    return import.meta.env.BASE_URL + '/' + (id === 'index' ? '' : id)
+    const href = import.meta.env.BASE_URL + '/' + (id === 'index' ? '' : id)
+    if (buildConfig.format === 'directory' && !href.endsWith('/')) {
+        return href + '/'
+    }
+    return href
 }
 
 export function getPageGroup(page: Page) {

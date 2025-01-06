@@ -4,6 +4,7 @@ import virtual from '@rollup/plugin-virtual'
 import type { AstroIntegration } from 'astro'
 
 import pagefind from './pagefind.js'
+import previews from './previews.js'
 import type { Page } from './sidebar.js'
 
 export interface AtlasOptions {
@@ -31,8 +32,11 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                     pattern: '404',
                     entrypoint: '@lameuler/atlas/pages/404.astro',
                 })
-                updateConfig({
-                    integrations: [svelte(), pagefind(), sitemap()],
+                const config = updateConfig({
+                    build: {
+                        assets: 'assets'
+                    },
+                    integrations: [svelte(), pagefind(), sitemap(), previews(options)],
                     markdown: {
                         shikiConfig: {
                             themes: {
@@ -42,10 +46,12 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                             defaultColor: false,
                         },
                     },
+                })
+                updateConfig({
                     vite: {
                         plugins: [
                             virtual({
-                                '@lameuler/atlas:virtual': `export const options = ${JSON.stringify(options)}`,
+                                '@lameuler/atlas:virtual': `export const options = ${JSON.stringify(options)}; export const buildConfig = ${JSON.stringify(config.build)}`,
                             }),
                         ],
                     },

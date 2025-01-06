@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html class="dark">
+    <head>
+        <link
+            rel="preload"
+            href="https://fonts.ler.quest/lexend/latin.woff2"
+            as="font"
+            crossorigin="anonymous"
+        />
+        <link rel="stylesheet" href="../assets/global.css"/>
+        <link rel="stylesheet" href="../assets/fonts.css"/>
+        <style>
+            @font-face {
+                font-family: 'Lexend';
+                font-style: normal;
+                font-weight: 100 900;
+                font-display: swap;
+                src: url(https://fonts.ler.quest/lexend/latin-ext.woff2) format('woff2');
+                unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+                    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+                    U+2113, U+2C60-2C7F, U+A720-A7FF;
+            }
+            @font-face {
+                font-family: 'Lexend';
+                font-style: normal;
+                font-weight: 100 900;
+                font-display: swap;
+                src: url(https://fonts.ler.quest/lexend/latin.woff2) format('woff2');
+                unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+                    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+                    U+FEFF, U+FFFD;
+            }
+            html, body {
+                width: 1200px;
+                height: 630px;
+                overflow: hidden;
+            }
+            main {
+                padding: 30px;
+                width: 400px;
+                height: 210px;
+                display: flex;
+                flex-direction: column;
+                scale: 3;
+                transform-origin: 0 0;
+            }
+            .top {
+                display: flex;
+                gap: 6px;
+                align-items: center;
+            }
+            .origin {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .origin > span > span {
+                font-weight: 600;
+            }
+            .slash {
+                color: var(--sub);
+            }
+            #name {
+                font-weight: 500;
+            }
+            #badge {
+                border: 1px solid rgb(245, 158, 11);
+                background-color: rgba(245, 158, 11, 0.3);
+                font-size: 12px;
+                border-radius: 4px;
+                padding: 0 3px;
+                margin-left: 2px;
+            }
+            article {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 15px 0 20px 0;
+            }
+            #group {
+                color: var(--sub);
+                font-weight: 500;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin-bottom: 5px;
+                white-space: nowrap;
+            }
+            #title {
+                font-weight: 600;
+                font-size: 24px;
+                line-height: 32px;
+                overflow-wrap: anywhere;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-clamp: 2;
+            }
+            .line {
+                position: absolute;
+                left: 25px;
+                right: 25px;
+                bottom: 20px;
+                border-bottom: 2px solid var(--line);
+                border-radius: 1px;
+            }
+            .hidden {
+                display: none;
+            }
+
+        </style>
+    </head>
+    <body>
+        <main>
+            <div class="top">
+                <div class="origin">
+                    <img src="https://ler.quest/icons/favicon.svg" width="20" height="20" alt="🚀" />
+                    <span>
+                        <span>ler</span>.quest
+                    </span>
+                </div>
+                <div class="slash">/</div>
+                <div id="name">name</div>
+                <div class="mono hidden" id="badge">badge</div>
+            </div>
+            <article>
+                <div id="group">Group</div>
+                <div id="title">Title</div>
+            </article>
+            <div class="line"></div>
+        </main>
+    </body>
+</html>
