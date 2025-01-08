@@ -43,13 +43,10 @@ function defaultGenerateId({ entry, data }: GenerateIdOptions) {
 
     const withoutExt = entry.slice(0, entry.length - extname(entry).length)
     const rawSegments = withoutExt.split(sep)
-    const result = rawSegments
+    return rawSegments
         .map((segment) => slug(segment))
         .join('/')
         .replace(/(^|\/)index$/, '/')
-
-    console.log(result)
-    return result
 }
 
 export function docsLoader(options: LoaderOptions): Loader {
