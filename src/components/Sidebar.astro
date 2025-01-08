@@ -1,6 +1,12 @@
 ---
 import SidebarGroup from './SidebarGroup.astro'
 import { groups } from '../sidebar.js'
+
+interface Props {
+    current?: string
+}
+
+const { current } = Astro.props
 ---
 
 <nav id="sidebar">
@@ -10,7 +16,7 @@ import { groups } from '../sidebar.js'
         </svg>
         Close
     </button>
-    {groups.map((group) => <SidebarGroup {...group} />)}
+    {groups.map((group) => <SidebarGroup {...group} {current} />)}
     <script is:inline>
         ;(function () {
             const top = parseFloat(sessionStorage.getItem('sidebar:scroll') ?? '0')

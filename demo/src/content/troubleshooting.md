@@ -14,21 +14,21 @@ title: Troubleshooting
 
 ##### hey...
 
-[go here!!!](markdown.md#what-about-nested-lists)
+[markdown.md#what-about-nested-lists](markdown.md#what-about-nested-lists)
 
-[go here too!!!](markdown#what-to-expect-from-here-on-out)
+[markdown#what-to-expect-from-here-on-out](markdown#what-to-expect-from-here-on-out)
 
-[but not here](fake.md#so-real)
+[fake.md#so-real](fake.md#so-real)
 
-[this is ok](#ok)
+[#ok](#ok)
 
-[how about this](index.md?theme=dark) [and this](dir/index.md?theme=light#hi)
+[index.md?theme=dark](index.md?theme=dark) [dir/index.md?theme=light#hi](dir/index.md?theme=light#hi)
 
-[uh](../google-fine)
+[../google-fine](../google-fine)
 
-[or here](/astro-notebook/typebox)
+[/astro-notebook/typebox](/astro-notebook/typebox)
 
-[white space](white%20space.md)
+[white space.md](white%20space.md)
 
 ###### whatAGreatDayRightGuys
 

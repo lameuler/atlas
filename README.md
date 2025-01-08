@@ -24,7 +24,7 @@ export default defineConfig({
                     // specify sidebar groups with pages
                     name: 'Guides',
                     pages: [
-                        'index',
+                        '/',
                         'configuration',
                         'troubleshooting',
                         'markdown',

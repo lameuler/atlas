@@ -25,7 +25,7 @@ interface Props {
 const { title, href, subtitle, description, headings, group, prev, next } = Astro.props
 ---
 
-<Layout {title} {description}>
+<Layout {title} {description} {href}>
     <PreviewImage slot="head" {title} {group} />
     <link slot="head" rel="canonical" href={import.meta.env.SITE + href} />
     <meta slot="head" property="og:url" content={import.meta.env.SITE + href} />

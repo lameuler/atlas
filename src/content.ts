@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { extname, relative, resolve, sep } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { parseFrontmatter } from '@astrojs/markdown-remark'
 import { type Loader, glob } from 'astro/loaders'
@@ -25,14 +25,40 @@ const schema = z.object({
 /** @deprecated */
 export const docsSchema = schema
 
+type GenerateIdOptions = {
+    entry: string
+    base: URL
+    data: Record<string, unknown>
+}
+
 export type LoaderOptions = {
     base: string | URL
-    generateId?: (options: { entry: string; base: URL; data: Record<string, unknown> }) => string
+    generateId?: (options: GenerateIdOptions) => string
+}
+
+function defaultGenerateId({ entry, data }: GenerateIdOptions) {
+    if (data.slug) {
+        return String(data.slug)
+    }
+
+    const withoutExt = entry.slice(0, entry.length - extname(entry).length)
+    const rawSegments = withoutExt.split(sep)
+    const result = rawSegments
+        .map((segment) => slug(segment))
+        .join('/')
+        .replace(/(^|\/)index$/, '/')
+
+    console.log(result)
+    return result
 }
 
 export function docsLoader(options: LoaderOptions): Loader {
-    globalThis.atlasLoaderOptions = options
-    const loader = glob({ pattern: '**/*.{md,mdx}', base: options.base })
+    const generateId = options.generateId ?? defaultGenerateId
+    globalThis.atlasLoaderOptions = {
+        base: options.base,
+        generateId,
+    }
+    const loader = glob({ pattern: '**/*.{md,mdx}', base: options.base, generateId })
     return {
         name: 'atlas:loader',
         load: (context) => {
@@ -59,17 +85,8 @@ export async function getId(entry: string) {
     const contents = await readFile(full, 'utf8')
     const result = parseFrontmatter(contents, { frontmatter: 'empty-with-spaces' })
     const data = result.frontmatter
-    if (data.slug) {
-        return String(data.slug)
-    }
-    const relativePath = relative(base, entry)
-    if (relativePath.startsWith('..')) throw new Error('invalid entry path')
+    const relativeEntry = relative(base, full)
+    if (relativeEntry.startsWith('..')) throw new Error(`invalid entry path: ${entry}`)
 
-    const ext = extname(relativePath)
-    const withoutExt = relativePath.slice(0, -ext.length)
-    const rawSegments = withoutExt.split(sep)
-    return rawSegments
-        .map((segment) => slug(segment))
-        .join('/')
-        .replace(/\/index$/, '')
+    return options.generateId({ entry: relativeEntry, base: pathToFileURL(base), data })
 }

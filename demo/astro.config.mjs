@@ -14,7 +14,7 @@ export default defineConfig({
                 {
                     name: 'Guides',
                     pages: [
-                        'index',
+                        '/',
                         'configuration',
                         'troubleshooting',
                         'markdown',
@@ -24,7 +24,7 @@ export default defineConfig({
                             label: 'View on GitHub',
                             page: 'https://github.com/lameuler/astro-pdf',
                         },
-                        'dir',
+                        'dir/',
                     ],
                 },
             ],

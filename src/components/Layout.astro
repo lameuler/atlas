@@ -14,9 +14,10 @@ import LoadFonts from './LoadFonts.astro'
 interface Props {
     title: string
     description?: string
+    href?: string
 }
 
-const { title, description } = Astro.props
+const { title, description, href } = Astro.props
 ---
 
 <!doctype html>
@@ -40,7 +41,7 @@ const { title, description } = Astro.props
     <body>
         <Header />
         <MobileHeader />
-        <Sidebar />
+        <Sidebar current={href} />
         <main>
             <slot />
             <Footer />

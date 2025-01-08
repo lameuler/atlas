@@ -2,8 +2,9 @@
 interface Props {
     name?: string
     pages: { href: string; label: string; external?: boolean }[]
+    current?: string
 }
-const { name, pages } = Astro.props
+const { name, pages, current } = Astro.props
 ---
 
 <div>
@@ -11,13 +12,7 @@ const { name, pages } = Astro.props
     <ul>
         {
             pages.map(({ href, label, external }) => (
-                <li
-                    class={
-                        Astro.url.pathname.replace(/\/+$/, '') === href.replace(/\/+$/, '')
-                            ? 'active'
-                            : undefined
-                    }
-                >
+                <li class={current === href ? 'active' : undefined}>
                     <a {href}>
                         {label}
                         {external && (

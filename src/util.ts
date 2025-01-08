@@ -7,11 +7,14 @@ export function getEntryPathname(
 ) {
     const ext = extname(id)
     id = id.slice(0, id.length - ext.length)
-    if (id === 'index' || id.endsWith('/index')) {
+    if (id.endsWith('/index')) {
         id = id.slice(0, -5)
     }
     if (buildFormat === 'file' && id.endsWith('/')) {
         id = id.slice(0, -1)
+    }
+    if (id.startsWith('/')) {
+        id = id.slice(1)
     }
     let href = base + '/' + id
     if (buildFormat === 'directory' && !href.endsWith('/')) {
