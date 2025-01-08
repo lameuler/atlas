@@ -4,6 +4,7 @@ import virtual from '@rollup/plugin-virtual'
 import type { AstroIntegration } from 'astro'
 
 import pagefind from './pagefind.js'
+import { rehypeAside } from './plugins.js'
 import previews from './previews.js'
 import type { Page } from './sidebar.js'
 
@@ -34,7 +35,7 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                 })
                 const config = updateConfig({
                     build: {
-                        assets: 'assets'
+                        assets: 'assets',
                     },
                     integrations: [svelte(), pagefind(), sitemap(), previews(options)],
                     markdown: {
@@ -45,6 +46,7 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                             },
                             defaultColor: false,
                         },
+                        rehypePlugins: [rehypeAside],
                     },
                 })
                 updateConfig({

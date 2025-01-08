@@ -1,4 +1,4 @@
-import { options, buildConfig } from '@lameuler/atlas:virtual'
+import { buildConfig, options } from '@lameuler/atlas:virtual'
 import { getCollection } from 'astro:content'
 
 const entries = await getCollection('docs')

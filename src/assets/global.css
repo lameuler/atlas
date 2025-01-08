@@ -13,6 +13,7 @@ body {
     color: rgb(var(--text));
     scroll-padding-top: 6.5rem;
     scroll-behavior: smooth;
+    --height: 1;
     --sub: #5d6b83;
     --line: #a0b0c5;
     --accent: #735bd3;

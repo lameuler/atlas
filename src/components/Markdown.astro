@@ -6,7 +6,9 @@
     section {
         position: relative;
         --color: #2e3145;
+        --root-color: rgb(var(--text));
         color: var(--color);
+        line-height: calc(var(--height) * 1.8);
     }
     :global(.dark) section {
         --color: #cad7e4;
@@ -14,10 +16,7 @@
     section :global(strong),
     section :global(b) {
         font-weight: 650;
-        color: rgb(var(--text));
-    }
-    section :global(p) {
-        margin: 1em 0;
+        color: var(--root-color);
     }
     section :global(a) {
         text-decoration: underline;
@@ -29,25 +28,87 @@
     }
 
     section :global(pre) {
-        line-height: 1.5;
+        line-height: calc(var(--height) * 1.5);
     }
 
-    section :global(blockquote) {
-        margin: 1em 0;
-        padding-inline-start: 1em;
-        border-inline-start: 3px solid var(--line);
+    section :global(:is(p, blockquote, aside)) {
+        margin: calc(var(--height) * 1em) 0;
     }
-    section :global(blockquote p) {
+    section :global(blockquote) {
+        padding-inline-start: 1em;
+        padding-block: 0.2rem 0.3rem;
+        border-inline-start: 3px solid var(--line);
         color: var(--sub);
     }
+    section :global(aside) {
+        padding-inline-start: 1em;
+        padding-block: 0.2rem 0.3rem;
+        border-inline-start: 3px solid var(--aside);
+    }
+    section :global(aside > .title) {
+        font-weight: 500;
+        display: flex;
+        gap: 0.4em;
+        align-items: center;
+        overflow-wrap: anywhere;
+        --root-color: var(--aside);
+        color: var(--root-color);
+        line-height: calc(var(--height) * 1.5);
+    }
+    section :global(aside > .title > svg.icon) {
+        width: 1.25em;
+        height: 1.25em;
+        flex-shrink: 0;
+    }
+    section :global(aside > :nth-child(2)) {
+        margin-top: 0.5em;
+    }
+    section :global(blockquote > :first-child) {
+        margin-top: 0;
+    }
+    section :global(blockquote > :last-child),
+    section :global(aside > :last-child) {
+        margin-bottom: 0;
+    }
+    section :global(aside.note) {
+        --aside: #2563eb;
+    }
+    :global(.dark) section :global(aside.note) {
+        --aside: #3b82f6;
+    }
+    section :global(aside.tip) {
+        --aside: #16a34a;
+    }
+    :global(.dark) section :global(aside.tip) {
+        --aside: #22c55e;
+    }
+    section :global(aside.important) {
+        --aside: #9333ea;
+    }
+    :global(.dark) section :global(aside.important) {
+        --aside: #a855f7;
+    }
+    section :global(aside.warning) {
+        --aside: #d97706;
+    }
+    :global(.dark) section :global(aside.warning) {
+        --aside: #f59e0b;
+    }
+    section :global(aside.caution) {
+        --aside: #dc2626;
+    }
+    :global(.dark) section :global(aside.caution) {
+        --aside: #ef4444;
+    }
+
     section :global(figure) {
-        margin: 2em 0;
+        margin: calc(var(--height) * 2em) 0;
     }
     section :global(figcaption) {
         font-size: 0.95em;
         line-height: 1.6;
         color: var(--sub);
-        margin-top: 0.5em;
+        margin-top: calc(var(--height) * 0.5em);
     }
     section :global(img) {
         max-width: 100%;
@@ -55,13 +116,13 @@
     section :global(hr) {
         border: none;
         border-block-start: 1px solid var(--line);
-        margin: 0.5em auto;
+        margin: calc(var(--height) * 0.5em) auto;
     }
     section :global(kbd) {
         font-size: 0.9em;
         border-radius: 0.4em;
         padding: 0.25em 0.35em;
-        color: rgb(var(--text));
+        color: var(--root-color);
         border: 1px solid var(--line);
         box-shadow: 0 2.5px 0 -1px var(--line);
     }
@@ -69,33 +130,37 @@
     section :global(ul) {
         list-style-type: disc;
         padding-inline-start: 1.75em;
-        margin: 2em 0;
     }
     section :global(ol) {
         list-style-type: decimal;
         padding-inline-start: 1.75em;
-        margin: 2em 0;
     }
     section :global(:is(ol, ul) :is(ol, ul)) {
-        margin-block: 0.25em 0.75em;
+        margin-block: calc(var(--height) * 0.5em) calc(var(--height) * 1em);
     }
-    section :global(li) {
+    section :global(:is(ul, ol) > li) {
+        margin: 0 0 calc(var(--height) * 0.5em) 0;
         padding-inline-start: 0.25em;
-        margin: 0 0 0.25em 0;
     }
     section :global(li::marker) {
         color: var(--sub);
     }
-    section :global(dl) {
-        margin: 2em 0;
+    section :global(:is(ul, ol, dl)) {
+        margin: calc(var(--height) * 1em) 0;
+    }
+    section :global(:is(ul, ol, dl) > :first-child) {
+        margin-top: 0;
+    }
+    section :global(:is(ul, ol, dl) > :last-child) {
+        margin-bottom: 0;
     }
     section :global(dt) {
-        color: rgb(var(--text));
+        color: var(--root-color);
         font-weight: 600;
-        margin-top: 1.5em;
+        margin-top: calc(var(--height) * 1em);
     }
     section :global(dd) {
-        margin-block: 0.75em;
+        margin-block: calc(var(--height) * 0.5em);
         margin-inline-start: 1.5em;
     }
 
@@ -104,7 +169,7 @@
         max-width: 100%;
         display: block;
         overflow-x: auto;
-        margin: 1.5em 0;
+        margin: calc(var(--height) * 1.5em) 0;
     }
     section :global(:is(th, td)) {
         border: 1px solid var(--line);
@@ -112,7 +177,7 @@
     }
     section :global(th) {
         font-weight: 600;
-        color: rgb(var(--text));
+        color: var(--root-color);
         text-align: start;
     }
     section
@@ -146,37 +211,37 @@
     }
 
     section :global(:is(h1, h2, h3, h4, h5, h6)) {
-        color: rgb(var(--text));
+        color: var(--root-color);
     }
     section :global(h1) {
-        margin-block: 2em 1em;
         font-size: 2.25em;
     }
     section :global(h2) {
-        margin-block: 2em 1em;
         font-size: 1.75em;
         font-weight: 600;
     }
     section :global(h3) {
-        margin-block: 2em 1em;
         font-size: 1.5em;
         font-weight: 600;
     }
     section :global(h4) {
-        margin-block: 1.5em 1em;
         font-size: 1.25em;
         font-weight: 550;
     }
     section :global(h5) {
-        margin-block: 1.5em 1em;
         font-size: 1em;
         font-weight: 650;
     }
     section :global(h6) {
-        margin-block: 1.5em 1em;
         font-size: 1em;
         font-weight: 500;
         color: #6f7695;
+    }
+    section :global(:is(h1, h2, h3)) {
+        margin-block: calc(var(--height) * 2em) calc(var(--height) * 1em);
+    }
+    section :global(:is(h4, h5, h6)) {
+        margin-block: calc(var(--height) * 1.5em) calc(var(--height) * 1em);
     }
     section :global(:is(h1, h2, h3, h4, h5, h6) + :is(h1, h2, h3, h4, h5, h6)) {
         margin-top: 0;

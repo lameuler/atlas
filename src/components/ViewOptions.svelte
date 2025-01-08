@@ -40,7 +40,7 @@
         if (article) {
             article.dataset.font = font
             article.style.fontSize = size + 'rem'
-            article.style.lineHeight = line * 1.8 + ''
+            article.style.setProperty('--height', line+'')
         }
     })
     $effect(() => {
@@ -75,7 +75,7 @@
                 const article = document.querySelector('body > main > article')
                 article.dataset.font = font
                 article.style.fontSize = size + 'rem'
-                article.style.lineHeight = line * 1.8 + ''
+                article.style.setProperty('--height', line+'')
             }
         })()
     </script>

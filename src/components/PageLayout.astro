@@ -26,7 +26,7 @@ const { title, href, subtitle, description, headings, group, prev, next } = Astr
 ---
 
 <Layout {title} {description}>
-    <PreviewImage slot="head" {title} {group}/>
+    <PreviewImage slot="head" {title} {group} />
     <link slot="head" rel="canonical" href={import.meta.env.SITE + href} />
     <meta slot="head" property="og:url" content={import.meta.env.SITE + href} />
     <article data-pagefind-body>
