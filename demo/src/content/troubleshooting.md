@@ -14,6 +14,22 @@ title: Troubleshooting
 
 ##### hey...
 
+[go here!!!](markdown.md#what-about-nested-lists)
+
+[go here too!!!](markdown#what-to-expect-from-here-on-out)
+
+[but not here](fake.md#so-real)
+
+[this is ok](#ok)
+
+[how about this](index.md?theme=dark) [and this](dir/index.md?theme=light#hi)
+
+[uh](../google-fine)
+
+[or here](/astro-notebook/typebox)
+
+[white space](white%20space.md)
+
 ###### whatAGreatDayRightGuys
 
 > [!NOTE]

@@ -24,6 +24,7 @@ export default defineConfig({
                             label: 'View on GitHub',
                             page: 'https://github.com/lameuler/astro-pdf',
                         },
+                        'dir',
                     ],
                 },
             ],

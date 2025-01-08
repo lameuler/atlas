@@ -1,57 +1,52 @@
+import { relative, sep } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
+import type { AstroConfig } from 'astro'
 import type { ElementContent, Root } from 'hast'
 import { h } from 'hastscript'
 import type { Plugin } from 'unified'
 import { visit } from 'unist-util-visit'
 
-const ALERTS: Record<string, { title: string; icon: ElementContent[] }> = {
+import { getId } from './content.js'
+import { getEntryPathname } from './util.js'
+
+const ALERTS: Record<string, { title: string; icon: string[] }> = {
     NOTE: {
         title: 'Note',
-        icon: [
-            h('path', { d: 'M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0' }),
-            h('path', { d: 'M12 9h.01' }),
-            h('path', { d: 'M11 12h1v4h1' }),
-        ],
+        icon: ['M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0', 'M12 9h.01', 'M11 12h1v4h1'],
     },
     TIP: {
         title: 'Tip',
         icon: [
-            h('path', { d: 'M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7' }),
-            h('path', {
-                d: 'M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3',
-            }),
-            h('path', { d: 'M9.7 17l4.6 0' }),
+            'M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7',
+            'M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3',
+            'M9.7 17l4.6 0',
         ],
     },
     IMPORTANT: {
         title: 'Important',
         icon: [
-            h('path', { d: 'M8 9h8' }),
-            h('path', { d: 'M8 13h6' }),
-            h('path', {
-                d: 'M15 18l-3 3l-3 -3h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v5.5',
-            }),
-            h('path', { d: 'M19 16v3' }),
-            h('path', { d: 'M19 22v.01' }),
+            'M8 9h8',
+            'M8 13h6',
+            'M15 18l-3 3l-3 -3h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v5.5',
+            'M19 16v3',
+            'M19 22v.01',
         ],
     },
     WARNING: {
         title: 'Warning',
         icon: [
-            h('path', { d: 'M12 9v4' }),
-            h('path', {
-                d: 'M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z',
-            }),
-            h('path', { d: 'M12 16h.01' }),
+            'M12 9v4',
+            'M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z',
+            'M12 16h.01',
         ],
     },
     CAUTION: {
         title: 'Caution',
         icon: [
-            h('path', {
-                d: 'M12.802 2.165l5.575 2.389c.48 .206 .863 .589 1.07 1.07l2.388 5.574c.22 .512 .22 1.092 0 1.604l-2.389 5.575c-.206 .48 -.589 .863 -1.07 1.07l-5.574 2.388c-.512 .22 -1.092 .22 -1.604 0l-5.575 -2.389a2.036 2.036 0 0 1 -1.07 -1.07l-2.388 -5.574a2.036 2.036 0 0 1 0 -1.604l2.389 -5.575c.206 -.48 .589 -.863 1.07 -1.07l5.574 -2.388a2.036 2.036 0 0 1 1.604 0z',
-            }),
-            h('path', { d: 'M12 8v4' }),
-            h('path', { d: 'M12 16h.01' }),
+            'M12.802 2.165l5.575 2.389c.48 .206 .863 .589 1.07 1.07l2.388 5.574c.22 .512 .22 1.092 0 1.604l-2.389 5.575c-.206 .48 -.589 .863 -1.07 1.07l-5.574 2.388c-.512 .22 -1.092 .22 -1.604 0l-5.575 -2.389a2.036 2.036 0 0 1 -1.07 -1.07l-2.388 -5.574a2.036 2.036 0 0 1 0 -1.604l2.389 -5.575c.206 -.48 .589 -.863 1.07 -1.07l5.574 -2.388a2.036 2.036 0 0 1 1.604 0z',
+            'M12 8v4',
+            'M12 16h.01',
         ],
     },
 }
@@ -123,7 +118,7 @@ export const rehypeAside: Plugin<[], Root> = () => {
                                 h(
                                     'svg',
                                     { viewBox: '0 0 24 24', width: 20, height: 20, class: 'icon' },
-                                    ...alert.icon,
+                                    ...alert.icon.map((d) => h('path', { d })),
                                 ),
                                 h('div', {}, ...title),
                             ),
@@ -132,5 +127,50 @@ export const rehypeAside: Plugin<[], Root> = () => {
                 }
             }
         })
+    }
+}
+
+export const rehypeLinks: Plugin<[AstroConfig], Root> = (config) => {
+    return async (tree, vfile) => {
+        const promises: Promise<void>[] = []
+
+        visit(tree, 'element', (node) => {
+            if (node.tagName !== 'a' || typeof node.properties.href !== 'string') return
+
+            const href = node.properties.href
+            if (href.startsWith('#') || href.startsWith('/')) return
+
+            const fileUrl = new URL(node.properties.href, pathToFileURL(vfile.path))
+            if (fileUrl.protocol !== 'file:') return
+
+            const filePath = fileURLToPath(fileUrl)
+
+            promises.push(
+                getId(filePath)
+                    .then((id) => {
+                        // treat url as refernce to entry
+                        node.properties.href =
+                            getEntryPathname(id, config.base, config.build.format) +
+                            fileUrl.search +
+                            fileUrl.hash
+                    })
+                    .catch(() => {
+                        // treat url as just a normal relative url
+                        const loaderBase = globalThis.atlasLoaderOptions?.base
+                        if (!loaderBase) return
+                        const contentDir =
+                            typeof loaderBase === 'string' ? loaderBase : fileURLToPath(loaderBase)
+                        const fileId = relative(contentDir, vfile.path)
+                            .replaceAll(sep, '/')
+                            .replace(/^(\.\.\/)+/, '')
+
+                        const from = getEntryPathname(fileId, config.base, 'preserve')
+                        const url = new URL(href, new URL(from, 'base://'))
+                        node.properties.href = url.pathname + url.search + url.hash
+                    }),
+            )
+        })
+
+        await Promise.all(promises)
     }
 }

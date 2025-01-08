@@ -4,7 +4,7 @@ import virtual from '@rollup/plugin-virtual'
 import type { AstroIntegration } from 'astro'
 
 import pagefind from './pagefind.js'
-import { rehypeAside } from './plugins.js'
+import { rehypeAside, rehypeLinks } from './plugins.js'
 import previews from './previews.js'
 import type { Page } from './sidebar.js'
 
@@ -46,7 +46,6 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                             },
                             defaultColor: false,
                         },
-                        rehypePlugins: [rehypeAside],
                     },
                 })
                 updateConfig({
@@ -56,6 +55,9 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                                 '@lameuler/atlas:virtual': `export const options = ${JSON.stringify(options)}; export const buildConfig = ${JSON.stringify(config.build)}`,
                             }),
                         ],
+                    },
+                    markdown: {
+                        rehypePlugins: [rehypeAside, [rehypeLinks, config]],
                     },
                 })
             },
