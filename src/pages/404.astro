@@ -13,8 +13,12 @@ import Layout from '../components/Layout.astro'
                 ;(function () {
                     const parent = document.currentScript?.parentElement
                     if (!parent) return
-                    const parts = window.location.pathname.split(/\/+/).slice(1)
-                    parts.reduce((prev, curr) => {
+                    const pathname = window.location.pathname
+                    const parts = pathname.replace(/\/+$/, '').split(/\/+/).slice(1)
+                    parts.reduce((prev, curr, i) => {
+                        if (i === parts.length - 1 && pathname.endsWith('/')) {
+                            curr += '/'
+                        }
                         const joined = prev + '/' + curr
                         const a = document.createElement('a')
                         a.href = '/' + joined
