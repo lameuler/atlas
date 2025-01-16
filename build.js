@@ -1,7 +1,7 @@
 // @ts-check
 import { existsSync } from 'node:fs'
-import { copyFile, lstat, mkdir, rm } from 'node:fs/promises'
-import { dirname, join, relative } from 'node:path'
+import { copyFile, lstat, mkdir, rm, symlink } from 'node:fs/promises'
+import { dirname, join, relative, resolve } from 'node:path'
 
 import { glob } from 'glob'
 
@@ -12,6 +12,11 @@ if (existsSync(outdir)) {
 }
 
 const files = await glob('src/**/*', { ignore: '**/*.ts' })
+
+const linkMode = process.argv.includes('--link') || process.argv.includes('-l')
+if (linkMode) {
+    console.log('running in symlink mode')
+}
 
 for (const file of files) {
     const stat = await lstat(file)
@@ -25,7 +30,11 @@ for (const file of files) {
         }
         const dest = join('./dist', relative('src', file))
         await mkdir(dirname(dest), { recursive: true })
-        await copyFile(file, dest)
+        if (linkMode) {
+            await symlink(resolve(file), dest)
+        } else {
+            await copyFile(file, dest)
+        }
         console.log(`${dest} (${size.toPrecision(3)}${suffix[i]})`)
     }
 }
