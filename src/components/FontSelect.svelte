@@ -31,16 +31,15 @@
         display: none;
     }
     svg {
-        visibility: hidden;
+        opacity: 0;
         width: 1rem;
         height: 1rem;
         stroke-width: 2.5px;
     }
     .selected svg {
-        visibility: visible;
+        opacity: 1;
     }
     label:not(.selected):hover svg {
-        visibility: visible;
         opacity: 0.6;
     }
 </style>

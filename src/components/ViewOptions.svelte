@@ -107,7 +107,6 @@
 <style>
     div {
         margin-top: 1rem;
-        /* margin-bottom: 2rem; */
         display: flex;
         align-items: center;
         gap: 0.8rem;
