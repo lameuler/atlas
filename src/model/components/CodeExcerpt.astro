@@ -1,0 +1,13 @@
+---
+import type { Excerpt } from '../excerpts.js'
+
+interface Props {
+    excerpt: Excerpt
+}
+
+const { excerpt } = Astro.props
+
+const html = await excerpt.render()
+---
+
+<Fragment set:html={html} />

@@ -1,0 +1,122 @@
+---
+import { type GetStaticPaths } from 'astro'
+import PageLayout from '../components/PageLayout.astro'
+import CodeExcerpt from '../model/components/CodeExcerpt.astro'
+import { getExports, isContainer, Named } from '../model/model.js'
+import { addGroup } from '../sidebar'
+import Heading from '../model/components/Heading.astro'
+import { getEntryPathname } from '../util'
+import { buildConfig } from '@lameuler/atlas:virtual'
+import NamedMember from '../model/components/NamedMember.astro'
+import MemberList from '../model/components/MemberList.astro'
+import DocsBlockSection from '../model/components/DocsBlockSection.astro'
+
+export const getStaticPaths = (async () => {
+    // TODO this is temporary
+    const entries = await getExports(
+        ['../temp/astro-pdf/src/index.ts', '../temp/astro-pdf/src/other.ts'],
+        '../temp/astro-pdf/tsconfig.json',
+    )
+    const pages: { id: string; href: string; named: Named }[] = []
+    entries
+        ?.map((entry) => [entry, ...entry.exports])
+        .flat()
+        .forEach((named) => {
+            const id = named.heading?.slug
+            if (typeof id === 'string') {
+                pages.push({
+                    id,
+                    named,
+                    href: getEntryPathname(
+                        id,
+                        import.meta.env.BASE_URL + '/model',
+                        buildConfig.format,
+                    ),
+                })
+            }
+        })
+    addGroup(
+        {
+            name: 'Reference',
+            pages: pages.map(({ href, named }) => ({
+                page: href,
+                label: named.name,
+            })),
+        },
+        'model.astro',
+    )
+    return pages.map(({ id, href, named }) => ({
+        params: {
+            id: id || undefined,
+        },
+        props: {
+            named,
+            href,
+        },
+    }))
+}) satisfies GetStaticPaths
+
+const { named, href } = Astro.props
+---
+
+<PageLayout title={named.name} {href} headings={named.headings}>
+    <!-- TODO release link -->
+    <a slot="subtitle" href="https://github.com/lameuler/astro-pdf/releases/tag/astro-pdf%401.7.0"
+        >astro-pdf@1.7.0</a
+    >
+    {
+        named.declarations.map((dec) => (
+            <section>
+                <Heading {...dec.heading} />
+                <CodeExcerpt excerpt={dec.excerpt} />
+                <DocsBlockSection block={dec.docs?.summary} />
+                <DocsBlockSection block={dec.docs?.remarks} />
+                {dec.docs?.examples?.map((block) => (
+                    <DocsBlockSection {block} />
+                ))}
+                {isContainer(dec) && (
+                    <>
+                        <NamedMember named={dec.constructors} />
+                        <NamedMember named={dec.callSignatures} />
+                        <NamedMember named={dec.indexSignatures} />
+                        <MemberList list={dec.staticMembers} />
+                        <MemberList list={dec.members} />
+                    </>
+                )}
+            </section>
+        ))
+    }
+</PageLayout>
+
+<style>
+    a {
+        background-color: var(--bg-code);
+        padding: 0.2em 0.6em;
+        border-radius: 1em;
+        color: var(--accent);
+    }
+    a:hover {
+        text-decoration: underline;
+        color: var(--accent-highlight);
+    }
+</style>
+
+<style is:global>
+    .astro-code a {
+        text-decoration-line: underline;
+        text-decoration-style: dotted;
+        text-decoration-color: var(--sub);
+        text-underline-offset: 16%;
+        text-decoration-thickness: 8%;
+    }
+    .astro-code a:hover {
+        z-index: 10;
+        text-decoration: none;
+    }
+    .astro-code a:hover span {
+        background-color: transparent !important;
+        text-decoration: underline;
+        text-underline-offset: 10%;
+        text-decoration-thickness: 10%;
+    }
+</style>

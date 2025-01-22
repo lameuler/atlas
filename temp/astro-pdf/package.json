@@ -1,0 +1,19 @@
+{
+    "name": "astro-pdf",
+    "version": "1.7.0",
+    "description": "Astro integration to generate PDFs from pages in your site and other websites",
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts",
+        "./other": "./src/other.ts"
+    },
+    "dependencies": {
+        "@puppeteer/browsers": "^2.5.0",
+        "kleur": "^4.1.5",
+        "p-map": "^7.0.3",
+        "puppeteer": "^23.10.1"
+    },
+    "peerDependencies": {
+        "astro": "^4.4.4 || ^5.0.0"
+    }
+}

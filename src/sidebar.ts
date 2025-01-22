@@ -5,21 +5,61 @@ import { getEntryPathname } from './util.js'
 
 const entries = await getCollection('docs')
 
-export const groups = (options.sidebar ?? [])
-    .map((group) => {
-        const pages: { href: string; label: string; external?: boolean }[] = []
-        for (const page of group.pages) {
-            const info = getPageInfo(page)
-            if (info) {
-                pages.push(info)
+export type ResolvedGroup = {
+    pages: {
+        href: string
+        label: string
+        external?: boolean
+    }[]
+    name?: string
+    prevGroupNav?: boolean
+    nextGroupNav?: boolean
+}
+
+export const groups: ResolvedGroup[] = []
+for (const group of options.sidebar ?? []) {
+    addGroup(group)
+}
+
+const groupMap = new Map<string | symbol, number>()
+
+export function addGroup(
+    group: {
+        name?: string
+        pages: Page[]
+        prevGroupNav?: boolean
+        nextGroupNav?: boolean
+    },
+    key?: string | symbol,
+) {
+    const pages: { href: string; label: string; external?: boolean }[] = []
+    for (const page of group.pages) {
+        const info = getPageInfo(page)
+        if (info) {
+            pages.push(info)
+        }
+    }
+    if (pages.length > 0) {
+        if (key !== undefined) {
+            const i = groupMap.get(key)
+            if (i !== undefined) {
+                groups[i] = {
+                    ...group,
+                    pages,
+                }
+                return
             }
         }
-        return {
-            ...group,
-            pages,
+        const i =
+            groups.push({
+                ...group,
+                pages,
+            }) - 1
+        if (key !== undefined) {
+            groupMap.set(key, i)
         }
-    })
-    .filter((group) => group.pages.length > 0)
+    }
+}
 
 export type Page = string | { page: string; label: string }
 
@@ -32,11 +72,13 @@ export type PageNavInfo = {
 
 export function getPageInfo(page: Page) {
     const id = typeof page === 'string' ? page : page.page
-    if (id.match(/^[a-z]+:\/\//)) {
+    if (id.match(/^\/.+/) || id.match(/^[a-z]+:\/\//)) {
         return {
             href: id,
             label: typeof page === 'string' ? id.replace(/^[a-z]+:\/\//, '') : page.label,
-            external: true,
+            external: !(
+                id === import.meta.env.BASE_URL || id.startsWith(import.meta.env.BASE_URL + '/')
+            ),
         }
     }
     const entry = entries.find((entry) => entry.id === id)

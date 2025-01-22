@@ -1,0 +1,17 @@
+{
+    "include": ["src/**/*"],
+    "exclude": ["node_modules"],
+    "compilerOptions": {
+        "rootDir": ".",
+        "strict": true,
+        "esModuleInterop": true,
+        "moduleResolution": "node16",
+        "module": "node16",
+        "target": "es2022",
+        "skipLibCheck": true,
+        "sourceMap": false,
+        "declaration": true,
+        "declarationMap": true,
+        "emitDeclarationOnly": true
+    }
+}

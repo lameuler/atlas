@@ -33,6 +33,11 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                     pattern: '404',
                     entrypoint: '@lameuler/atlas/pages/404.astro',
                 })
+                // TODO this is temporary
+                injectRoute({
+                    pattern: 'model/[...id]',
+                    entrypoint: '@lameuler/atlas/pages/model.astro',
+                })
                 const config = updateConfig({
                     build: {
                         assets: 'assets',
@@ -48,7 +53,7 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                         },
                     },
                 })
-                updateConfig({
+                const finalConfig = updateConfig({
                     vite: {
                         plugins: [
                             virtual({
@@ -60,6 +65,13 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                         rehypePlugins: [rehypeAside, [rehypeLinks, config]],
                     },
                 })
+                globalThis.atlasAstroMarkdownOptions = finalConfig.markdown
+                // TODO load source docs here
+            },
+            'astro:server:setup': ({ server }) => {
+                // TODO watch files and reload source docs
+                // server.watcher.add(resolve('../temp/astro-pdf/src/'))
+                server.watcher.on('change', (path) => console.log(path, 'changed'))
             },
         },
     }

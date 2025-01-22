@@ -132,6 +132,8 @@ export const rehypeAside: Plugin<[], Root> = () => {
 
 export const rehypeLinks: Plugin<[AstroConfig], Root> = (config) => {
     return async (tree, vfile) => {
+        if (!vfile.path) return
+
         const promises: Promise<void>[] = []
 
         visit(tree, 'element', (node) => {

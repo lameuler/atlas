@@ -26,13 +26,13 @@ const { title, href, subtitle, description, headings, group, prev, next } = Astr
 ---
 
 <Layout {title} {description} {href}>
-    <PreviewImage slot="head" {title} {group} />
+    {import.meta.env.ATLAS_PREVIEWS !== false && <PreviewImage slot="head" {title} {group} />}
     <link slot="head" rel="canonical" href={import.meta.env.SITE + href} />
     <meta slot="head" property="og:url" content={import.meta.env.SITE + href} />
     <article data-pagefind-body>
         <ViewOptions client:load />
         <h1>{title}</h1>
-        <span>{subtitle}</span>
+        <span><slot name="subtitle">{subtitle}</slot></span>
         <Markdown>
             <slot />
         </Markdown>

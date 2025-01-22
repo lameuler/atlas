@@ -1,0 +1,27 @@
+---
+import { NamedList } from '../model'
+import Heading from './Heading.astro'
+import MemberDeclaration from './MemberDeclaration.astro'
+
+interface Props {
+    list: NamedList
+}
+
+const { list } = Astro.props
+---
+
+{
+    list.length > 0 && (
+        <>
+            <Heading {...list.heading} />
+            {list.map((member) => (
+                <>
+                    <Heading {...member.heading} />
+                    {member.declarations.map((declaration) => (
+                        <MemberDeclaration {declaration} />
+                    ))}
+                </>
+            ))}
+        </>
+    )
+}
