@@ -1,6 +1,13 @@
-import { Comment, CommentDisplayPart, Reflection, ReflectionSymbolId } from 'typedoc'
+import {
+    CommentDisplayPart,
+    DeclarationReflection,
+    Reflection,
+    ReflectionSymbolId,
+    SignatureReflection,
+    makeRecursiveVisitor,
+} from 'typedoc'
 
-import { processor } from './markdown.js'
+import { getInlineProcessor, getProcessor } from './markdown.js'
 import { LinkResolver } from './model.js'
 
 class DocsReference {
@@ -26,12 +33,19 @@ class DocsReference {
     }
 }
 
+export interface DocsHeading {
+    depth: number
+    text: string
+    slug?: string | false
+    code?: boolean
+}
+
 export class DocsBlock {
     #parts: (string | DocsReference)[] = []
 
     constructor(
         parts: readonly CommentDisplayPart[],
-        public heading?: { depth: number; text: string; slug?: string },
+        public heading?: DocsHeading,
     ) {
         for (const part of parts) {
             switch (part.kind) {
@@ -67,33 +81,52 @@ export class DocsBlock {
             }
         }
     }
-    async render() {
+    async render(inline = false) {
+        const processor = inline ? await getInlineProcessor() : await getProcessor()
         return (await processor.process(this.content)).toString()
     }
 }
 
-export class Docs {
+interface DocsOptions {
     readonly summary?: DocsBlock
-    readonly remarks?: DocsBlock
     readonly params?: {
-        name: string
-        content: string
+        readonly heading?: DocsHeading
+        readonly members: readonly DocsBlock[]
     }
     readonly typeParams?: {
-        name: string
-        content: string
+        readonly heading?: DocsHeading
+        readonly members: readonly DocsBlock[]
     }
+    readonly defaultValue?: DocsBlock
+    readonly returnValue?: DocsBlock
+    readonly remarks?: DocsBlock
     readonly examples?: readonly DocsBlock[]
+}
 
-    // TODO params & type params
-    // TODO default value, return value
-    private constructor(options: {
-        summary?: DocsBlock
-        remarks?: DocsBlock
-        examples?: DocsBlock[]
-    }) {
+export class Docs implements DocsOptions {
+    readonly summary
+    readonly remarks
+    readonly defaultValue
+    readonly returnValue
+    readonly params
+    readonly typeParams
+    readonly examples
+
+    private constructor(options: DocsOptions) {
         if (options.summary?.isEmpty === false) {
             this.summary = options.summary
+        }
+        if (options.typeParams && options.typeParams.members.length > 0) {
+            this.typeParams = options.typeParams
+        }
+        if (options.params && options.params.members.length > 0) {
+            this.params = options.params
+        }
+        if (options.defaultValue?.isEmpty === false) {
+            this.defaultValue = options.defaultValue
+        }
+        if (options.returnValue?.isEmpty === false) {
+            this.returnValue = options.returnValue
         }
         if (options.remarks?.isEmpty === false) {
             this.remarks = options.remarks
@@ -103,18 +136,29 @@ export class Docs {
         }
     }
 
-    visitBlocks<T = unknown>(
-        visitor: (block: DocsBlock, kind: 'summary' | 'remarks' | 'example') => T,
-    ) {
+    visitBlocks<T = unknown>(visitor: (block: DocsBlock, kind: keyof DocsOptions) => T) {
         const results: T[] = []
         if (this.summary) {
             results.push(visitor(this.summary, 'summary'))
+        }
+        // TODO visit param head
+        for (const typeParam of this.typeParams?.members ?? []) {
+            results.push(visitor(typeParam, 'typeParams'))
+        }
+        for (const param of this.params?.members ?? []) {
+            results.push(visitor(param, 'params'))
+        }
+        if (this.defaultValue) {
+            results.push(visitor(this.defaultValue, 'defaultValue'))
+        }
+        if (this.returnValue) {
+            results.push(visitor(this.returnValue, 'returnValue'))
         }
         if (this.remarks) {
             results.push(visitor(this.remarks, 'remarks'))
         }
         for (const example of this.examples ?? []) {
-            results.push(visitor(example, 'example'))
+            results.push(visitor(example, 'examples'))
         }
         return results
     }
@@ -122,9 +166,84 @@ export class Docs {
         this.visitBlocks((block) => block.resolve(resolver))
     }
 
-    static of(comment: Comment | undefined, isChild: boolean): Docs {
+    static of(reflection: DeclarationReflection | SignatureReflection, isChild: boolean): Docs {
+        const comment = reflection.comment
         if (!comment) {
             return new Docs({})
+        }
+        const typeParams: DocsBlock[] = []
+        for (const tag of comment.getTags('@typeParam')) {
+            if (tag.name) {
+                typeParams.push(
+                    new DocsBlock(tag.content, { depth: 5, text: tag.name, code: true }),
+                )
+            }
+        }
+        for (const typeParam of reflection.typeParameters ?? []) {
+            typeParams.push(
+                new DocsBlock(typeParam.comment?.summary ?? [], {
+                    depth: 5,
+                    text: typeParam.name,
+                    code: true,
+                }),
+            )
+        }
+
+        const params: DocsBlock[] = []
+        for (const tag of comment.getTags('@param')) {
+            if (tag.name) {
+                params.push(new DocsBlock(tag.content, { depth: 5, text: tag.name, code: true }))
+            }
+        }
+        let returnValue: DocsBlock = new DocsBlock(comment?.getTag('@returns')?.content ?? [], {
+            depth: 5,
+            text: 'Returns:',
+        })
+        if (reflection instanceof SignatureReflection) {
+            for (const param of reflection.parameters ?? []) {
+                params.push(
+                    new DocsBlock(param.comment?.summary ?? [], {
+                        depth: 5,
+                        text: param.name,
+                        code: true,
+                    }),
+                )
+            }
+        } else if (reflection.type) {
+            reflection.type.visit(
+                makeRecursiveVisitor({
+                    reflection(type) {
+                        if (type.declaration.getAllSignatures().length !== 1) return
+
+                        for (const signature of type.declaration.getAllSignatures()) {
+                            for (const typeParam of signature.typeParameters ?? []) {
+                                typeParams.push(
+                                    new DocsBlock(typeParam.comment?.summary ?? [], {
+                                        depth: 5,
+                                        text: typeParam.name,
+                                        code: true,
+                                    }),
+                                )
+                            }
+                            for (const param of signature.parameters ?? []) {
+                                params.push(
+                                    new DocsBlock(param.comment?.summary ?? [], {
+                                        depth: 5,
+                                        text: param.name,
+                                        code: true,
+                                    }),
+                                )
+                            }
+                            if (signature.comment && returnValue.isEmpty) {
+                                returnValue = new DocsBlock(
+                                    signature.comment.getTag('@returns')?.content ?? [],
+                                    { depth: 5, text: 'Returns:' },
+                                )
+                            }
+                        }
+                    },
+                }),
+            )
         }
         const examples: DocsBlock[] = []
         const depth = isChild ? 5 : 3
@@ -143,7 +262,20 @@ export class Docs {
             }
         }
         return new Docs({
-            summary: new DocsBlock(comment.getShortSummary(true)),
+            summary: new DocsBlock(comment.summary),
+            typeParams: {
+                heading: { depth: 5, text: 'Type Parameters' },
+                members: typeParams.filter((block) => !block.isEmpty),
+            },
+            params: {
+                heading: { depth: 5, text: 'Parameters' },
+                members: params.filter((block) => !block.isEmpty),
+            },
+            defaultValue: new DocsBlock(comment.getTag('@defaultValue')?.content ?? [], {
+                depth: 5,
+                text: 'Default:',
+            }),
+            returnValue,
             remarks: new DocsBlock(
                 comment.getTag('@remarks')?.content ?? [],
                 isChild ? undefined : { depth: 2, text: 'Description' },

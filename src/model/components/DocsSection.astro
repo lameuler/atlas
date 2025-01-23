@@ -1,0 +1,33 @@
+---
+import { Docs } from '../docs.js'
+import DocsBlockInline from './DocsBlockInline.astro'
+import DocsBlockSection from './DocsBlockSection.astro'
+import DocsListSection from './DocsListSection.astro'
+
+interface Props {
+    docs: Docs
+}
+const { docs } = Astro.props
+---
+
+{docs.summary && <DocsBlockSection block={docs.summary} />}
+
+{docs.typeParams && <DocsListSection {...docs.typeParams} />}
+{docs.params && <DocsListSection {...docs.params} />}
+{
+    docs.defaultValue && (
+        <p>
+            <DocsBlockInline block={docs.defaultValue} />
+        </p>
+    )
+}
+{
+    docs.returnValue && (
+        <p>
+            <DocsBlockInline block={docs.returnValue} />
+        </p>
+    )
+}
+
+{docs.remarks && <DocsBlockSection block={docs.remarks} />}
+{docs.examples?.map((block) => <DocsBlockSection {block} />)}

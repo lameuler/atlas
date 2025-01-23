@@ -1,4 +1,5 @@
 import { RehypePlugin, RemarkPlugin, rehypeShiki } from '@astrojs/markdown-remark'
+import rehypeSanitize from 'rehype-sanitize'
 import rehypeStringify from 'rehype-stringify'
 import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
@@ -21,18 +22,59 @@ async function loadPlugins<T>(plugins?: (string | [string, unknown] | T | [T, un
     return result
 }
 
-const parser = unified().use(remarkParse).use(remarkGfm).use(remarkSmartypants)
-for (const [plugin, options] of await loadPlugins<RemarkPlugin>(
-    globalThis.atlasAstroMarkdownOptions?.remarkPlugins,
-)) {
-    parser.use(plugin, options)
+let _processor: ReturnType<typeof createProcessor> | undefined = undefined
+
+async function createProcessor() {
+    const parser = unified().use(remarkParse).use(remarkGfm).use(remarkSmartypants)
+    for (const [plugin, options] of await loadPlugins<RemarkPlugin>(
+        globalThis.atlasAstroMarkdownOptions?.remarkPlugins,
+    )) {
+        parser.use(plugin, options)
+    }
+
+    parser.use(remarkRehype).use(rehypeShiki, globalThis.atlasAstroMarkdownOptions?.shikiConfig)
+    for (const [plugin, options] of await loadPlugins<RehypePlugin>(
+        globalThis.atlasAstroMarkdownOptions?.rehypePlugins,
+    )) {
+        parser.use(plugin, options)
+    }
+
+    return parser.use(rehypeStringify)
 }
 
-parser.use(remarkRehype).use(rehypeShiki, globalThis.atlasAstroMarkdownOptions?.shikiConfig)
-for (const [plugin, options] of await loadPlugins<RehypePlugin>(
-    globalThis.atlasAstroMarkdownOptions?.rehypePlugins,
-)) {
-    parser.use(plugin, options)
+export async function getProcessor() {
+    return await (_processor ??= createProcessor())
 }
 
-export const processor = parser.use(rehypeStringify)
+async function createInlineProcessor() {
+    const parser = unified().use(remarkParse).use(remarkGfm).use(remarkSmartypants)
+    for (const [plugin, options] of await loadPlugins<RemarkPlugin>(
+        globalThis.atlasAstroMarkdownOptions?.remarkPlugins,
+    )) {
+        parser.use(plugin, options)
+    }
+    parser.use(remarkRehype)
+    for (const [plugin, options] of await loadPlugins<RehypePlugin>(
+        globalThis.atlasAstroMarkdownOptions?.rehypePlugins,
+    )) {
+        parser.use(plugin, options)
+    }
+    return parser
+        .use(rehypeSanitize, {
+            strip: ['script'],
+            ancestors: {},
+            protocols: { href: ['http', 'https'] },
+            tagNames: ['code', 'strong', 'b', 'em', 'i', 'strike', 's', 'del', 'a'],
+            attributes: {
+                a: ['href'],
+                '*': ['title'],
+            },
+        })
+        .use(rehypeStringify)
+}
+
+let _inlineProcessor: ReturnType<typeof createInlineProcessor> | undefined = undefined
+
+export async function getInlineProcessor() {
+    return await (_inlineProcessor ??= createInlineProcessor())
+}

@@ -28,9 +28,12 @@
 
     section :global(pre) {
         margin: calc(var(--height) * 1em) -0.4rem;
-        line-height: calc(var(--height) * 1.5);
+        line-height: max(var(--height) * 1.5, 1);
     }
 
+    section :global(section) {
+        margin: calc(var(--height) * 1.5em) 0 0 0;
+    }
     section :global(:is(p, blockquote, aside)) {
         margin: calc(var(--height) * 1em) 0;
     }
@@ -148,7 +151,7 @@
     section :global(:is(ul, ol, dl)) {
         margin: calc(var(--height) * 1em) 0;
     }
-    section :global(:is(ul, ol, dl) > :first-child) {
+    section :global(:is(ul, ol, dl, li) > :first-child) {
         margin-top: 0;
     }
     section :global(:is(ul, ol, dl) > :last-child) {
@@ -240,8 +243,14 @@
     section :global(:is(h1, h2, h3)) {
         margin-block: calc(var(--height) * 2em) calc(var(--height) * 1em);
     }
-    section :global(:is(h4, h5, h6)) {
+    section :global(h4) {
         margin-block: calc(var(--height) * 1.5em) calc(var(--height) * 1em);
+    }
+    section :global(:is(h5, h6)) {
+        margin-block: calc(var(--height) * 1.5em) calc(var(--height) * 0.5em);
+    }
+    section :global(:is(h5, h6) + *) {
+        margin-top: 0;
     }
     section :global(:is(h1, h2, h3, h4, h5, h6) + :is(h1, h2, h3, h4, h5, h6)) {
         margin-top: 0;

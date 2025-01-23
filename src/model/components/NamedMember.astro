@@ -1,7 +1,7 @@
 ---
 import { Named } from '../model'
 import Heading from './Heading.astro'
-import MemberDeclaration from './MemberDeclaration.astro'
+import DeclarationSection from './DeclarationSection.astro'
 
 interface Props {
     named?: Named
@@ -14,7 +14,7 @@ const { named } = Astro.props
         <>
             <Heading {...named.heading} />
             {named.declarations.map((declaration) => (
-                <MemberDeclaration {declaration} />
+                <DeclarationSection {declaration} />
             ))}
         </>
     )

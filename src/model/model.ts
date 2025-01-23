@@ -133,6 +133,7 @@ class NamedMap {
             return named
         }
     }
+    // TODO allow expanding the type of a property if it is a reference type
     addDeclaration(ref: DeclarationReflection | SignatureReflection, isChild = true) {
         const decRef = ref instanceof SignatureReflection ? ref.parent : ref
         const kind = getDeclarationKind(decRef.kind)
@@ -146,7 +147,7 @@ class NamedMap {
                 : { depth: 2, text: 'Signature' },
             kind,
             excerpt: Excerpt.of(ref),
-            docs: Docs.of(ref.comment, named.kind === 'member'),
+            docs: Docs.of(ref, named.kind === 'member'),
             source: ref.sources?.[0],
         }
         if (ref.isDeclaration() && (kind === 'Class' || kind === 'Interface')) {
@@ -171,7 +172,7 @@ class NamedMap {
                                 heading: { depth: 5, slug: false, text: 'Signature:' },
                                 kind: 'Constructor',
                                 excerpt: Excerpt.of(signature),
-                                docs: Docs.of(signature.comment, true),
+                                docs: Docs.of(signature, true),
                                 source: signature.sources?.[0],
                             })
                         } else if (child.flags.isStatic) {
@@ -241,7 +242,7 @@ function getSignatureDeclarations(
             heading: { depth: 5, slug: false, text: 'Signature:' },
             kind,
             excerpt: Excerpt.of(signature),
-            docs: Docs.of(signature.comment, true),
+            docs: Docs.of(signature, true),
             source: signature.sources?.[0],
         }))
         return {

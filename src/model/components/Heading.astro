@@ -1,11 +1,11 @@
 ---
-interface Props {
+import { DocsHeading } from '../docs'
+
+interface Props extends Partial<DocsHeading> {
     depth: number
-    slug?: string | false
-    text?: string
-    code?: boolean
+    inline?: boolean
 }
-const { depth, slug, text, code } = Astro.props
+const { depth, slug, text, code, inline } = Astro.props
 const id = slug || undefined
 ---
 
@@ -13,6 +13,9 @@ const id = slug || undefined
     text &&
         (function () {
             const content = code ? <code>{text}</code> : text
+            if (inline === true) {
+                return <b>{content}</b>
+            }
             switch (depth) {
                 case 1:
                     return <h1 {id}>{content}</h1>

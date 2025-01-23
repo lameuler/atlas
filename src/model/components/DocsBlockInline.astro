@@ -1,0 +1,31 @@
+---
+import { DocsBlock } from '../docs.js'
+import Heading from './Heading.astro'
+
+interface Props {
+    block: DocsBlock
+    sep?: string
+}
+
+const { block, sep } = Astro.props
+
+const html = await block.render(true)
+---
+
+{
+    block?.heading && (
+        <>
+            <Heading {...block.heading} inline />
+            {sep ? <span>{sep}</span> : ' '}
+        </>
+    )
+}
+<Fragment set:html={html} />
+
+<style>
+    span {
+        color: var(--sub);
+        font-weight: 700;
+        padding-inline: 0.4rem;
+    }
+</style>

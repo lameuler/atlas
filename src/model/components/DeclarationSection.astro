@@ -1,0 +1,18 @@
+---
+import type { Declaration } from '../model'
+import CodeExcerpt from './CodeExcerpt.astro'
+import DocsSection from './DocsSection.astro'
+import Heading from './Heading.astro'
+
+interface Props {
+    declaration: Declaration
+}
+
+const { heading, excerpt, docs } = Astro.props.declaration
+---
+
+<Heading {...heading} />
+
+<CodeExcerpt {excerpt} />
+
+<DocsSection {docs} />

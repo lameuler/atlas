@@ -51,6 +51,14 @@ export type FakeType = {
     constructor(): FakeType
 }
 
+/**
+ * An extremely real&trade; interface. &copy;
+ *
+ * > [!NOTE]
+ * > This is not a real interface
+ *
+ * @typeParam T - the type contained by `FakeInterface`
+ */
 export interface FakeInterface<T> {
     new <R>(r: { new (): R }): T
     /**
@@ -79,8 +87,32 @@ export interface FakeInterface<T> {
      * @example
      * f.a = '1'
      * console.log(f.a) // 1
+     *
+     * @param n - String value to be converted to number
      */
     set a(n: string)
+    /**
+     * @interface
+     * */
+    opts: {
+        a: string
+        b: number
+    }
+    /**
+     * fn
+     *
+     * @remarks
+     * This is a very versatile function
+     *
+     * @returns nothing
+     *
+     * @param a - Array of items to be converted to string
+     * @param b - Function to convert each item to string
+     *
+     * @typeParam T - The type of each item to be converted to string
+     *
+     */
+    fn: { <T>(a: T[], b: (t: T) => string): string[] } | false
 }
 
 const f: FakeInterface<string> = {} as FakeInterface<string>

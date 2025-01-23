@@ -51,9 +51,12 @@ export interface Options {
      * By default, {@link https://docs.astro.build/en/reference/cli-reference/#astro-preview | `astro preview` } will be used.
      * However, if you are using an adapter, you will likely need to use a custom server as currently only the {@link https://docs.astro.build/en/guides/integrations-guide/node/ | `@astrojs/node` adapter} supports `astro preview`.
      *
-     * The `server` function will be called with the project's {@link https://docs.astro.build/en/reference/configuration-reference/ | Astro config}, and should return the URL of the server and optionally a function to close the server. Note that only the `origin` of the server URL will be used.
+     * The `server` function will be called with the project's {@link https://docs.astro.build/en/reference/configuration-reference/ | Astro config}.
      *
      * This can also be set to `false` to not run any server. If `server` is set to `false` or returns no URL, then only pages with a full URL specified for the location in {@link PagesMap | `PagesMap`} will work.
+     *
+     * @returns
+     * The URL of the server and optionally a function to close the server. Note that only the `origin` of the server URL will be used.
      */
     server?: ((config: AstroConfig) => ServerOutput | Promise<ServerOutput>) | false
     /**

@@ -1,13 +1,11 @@
 ---
 import { type GetStaticPaths } from 'astro'
 import PageLayout from '../components/PageLayout.astro'
-import CodeExcerpt from '../model/components/CodeExcerpt.astro'
 import { isContainer } from '../model/model.js'
-import Heading from '../model/components/Heading.astro'
 import NamedMember from '../model/components/NamedMember.astro'
 import MemberList from '../model/components/MemberList.astro'
-import DocsBlockSection from '../model/components/DocsBlockSection.astro'
 import { getNextPage, getPageGroup, getPreviousPage } from '../sidebar'
+import DeclarationSection from '../model/components/DeclarationSection.astro'
 
 export const getStaticPaths = (async () => {
     return (
@@ -38,13 +36,7 @@ const next = getNextPage(href)
     {
         named.declarations.map((dec) => (
             <section>
-                <Heading {...dec.heading} />
-                <CodeExcerpt excerpt={dec.excerpt} />
-                <DocsBlockSection block={dec.docs?.summary} />
-                <DocsBlockSection block={dec.docs?.remarks} />
-                {dec.docs?.examples?.map((block) => (
-                    <DocsBlockSection {block} />
-                ))}
+                <DeclarationSection declaration={dec} />
                 {isContainer(dec) && (
                     <>
                         <NamedMember named={dec.constructors} />
@@ -54,6 +46,7 @@ const next = getNextPage(href)
                         <MemberList list={dec.members} />
                     </>
                 )}
+                {/* TODO link to source */}
             </section>
         ))
     }

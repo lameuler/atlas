@@ -3,23 +3,15 @@ import { DocsBlock } from '../docs.js'
 import Heading from './Heading.astro'
 
 interface Props {
-    block?: DocsBlock
+    block: DocsBlock
 }
 
 const { block } = Astro.props
 
-let html = ''
-
-if (block) {
-    html = await block.render()
-}
+const html = await block.render()
 ---
 
-{
-    html && (
-        <>
-            {block?.heading && <Heading {...block.heading} />}
-            <Fragment set:html={html} />
-        </>
-    )
-}
+<section>
+    {block?.heading && <Heading {...block.heading} />}
+    <Fragment set:html={html} />
+</section>
