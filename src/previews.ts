@@ -17,7 +17,7 @@ export default function previews(options: AtlasOptions): AstroIntegration {
                 assets = config.build.assets
             },
             'astro:build:done': async ({ dir, logger }) => {
-                if (globalThis.atlasPreviews.length > 0) {
+                if (globalThis.atlasPreviews && globalThis.atlasPreviews.length > 0) {
                     const start = Date.now()
                     logger.info(
                         `generating preview images for ${globalThis.atlasPreviews.length} pages`,
@@ -87,6 +87,7 @@ export function addEntry({ title, group }: { title: string; group?: string }): s
         id += CHARS[Math.round(Math.random() * CHARS.length)]
     }
     id += '.png'
+    globalThis.atlasPreviews ??= []
     globalThis.atlasPreviews.push({ id, title, group })
     return id
 }

@@ -16,7 +16,7 @@ export function getEntryPathname(
     if (id.startsWith('/')) {
         id = id.slice(1)
     }
-    let href = base + '/' + id
+    let href = base.replace(/\/+$/, '') + '/' + id
     if (buildFormat === 'directory' && !href.endsWith('/')) {
         href += '/'
     }

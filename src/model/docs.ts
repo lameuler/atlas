@@ -86,6 +86,7 @@ export class Docs {
     readonly examples?: readonly DocsBlock[]
 
     // TODO params & type params
+    // TODO default value, return value
     private constructor(options: {
         summary?: DocsBlock
         remarks?: DocsBlock

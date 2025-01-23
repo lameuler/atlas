@@ -1,3 +1,5 @@
+import { resolve } from 'node:path'
+
 import Slugger, { slug } from 'github-slugger'
 import {
     Application,
@@ -6,21 +8,17 @@ import {
     ReflectionSymbolId,
     ReflectionSymbolIdString,
     SignatureReflection,
+    SourceReference,
 } from 'typedoc'
 
-import { Docs, DocsBlock } from './comments.js'
+import { Docs, DocsBlock } from './docs.js'
 import { Excerpt } from './excerpts.js'
-
-// consider if exported functions & variables should get their own page
-// or only for class/interface/type
 
 export interface EntryPoint extends Named {
     kind: 'entry'
     exports: Named[]
-    // declarations are default exports
 }
 
-// TODO link to source
 export interface Named {
     name: string
     id?: number
@@ -72,7 +70,7 @@ function getDeclarationKind(refKind: ReflectionKind): DeclarationKind | undefine
 
 export interface Declaration {
     parent: Named
-    reflection?: DeclarationReflection | SignatureReflection
+    id?: number
     heading: {
         depth: number
         slug?: string | false
@@ -81,6 +79,7 @@ export interface Declaration {
     kind: Omit<DeclarationKind, 'Class' | 'Interface'>
     excerpt: Excerpt
     docs: Docs
+    source: SourceReference | undefined
 }
 
 export interface ContainerDeclaration extends Declaration {
@@ -141,13 +140,14 @@ class NamedMap {
         const named = this.get(ref.name, decRef.id)
         const declaration: Declaration = {
             parent: named,
-            reflection: ref,
+            id: ref.id,
             heading: isChild
                 ? { depth: 5, slug: false, text: 'Signature:' }
                 : { depth: 2, text: 'Signature' },
             kind,
             excerpt: Excerpt.of(ref),
             docs: Docs.of(ref.comment, named.kind === 'member'),
+            source: ref.sources?.[0],
         }
         if (ref.isDeclaration() && (kind === 'Class' || kind === 'Interface')) {
             const members = new NamedMap('member', named)
@@ -167,11 +167,12 @@ class NamedMap {
                         if (child.kind === ReflectionKind.Constructor) {
                             constructors.declarations.push({
                                 parent: constructors,
-                                reflection: signature,
+                                id: signature.id,
                                 heading: { depth: 5, slug: false, text: 'Signature:' },
                                 kind: 'Constructor',
                                 excerpt: Excerpt.of(signature),
                                 docs: Docs.of(signature.comment, true),
+                                source: signature.sources?.[0],
                             })
                         } else if (child.flags.isStatic) {
                             staticMembers.addDeclaration(signature)
@@ -236,11 +237,12 @@ function getSignatureDeclarations(
     if (signatures && signatures.length > 0) {
         const declarations: Declaration[] = signatures.map((signature) => ({
             parent,
-            reflection: signature,
+            id: signature.id,
             heading: { depth: 5, slug: false, text: 'Signature:' },
             kind,
             excerpt: Excerpt.of(signature),
             docs: Docs.of(signature.comment, true),
+            source: signature.sources?.[0],
         }))
         return {
             name,
@@ -416,8 +418,8 @@ export class LinkResolver {
     }
     private addDeclarations(declarations: Declaration[]) {
         for (const declaration of declarations) {
-            if (declaration.reflection) {
-                this.namedMap.set(declaration.reflection.id, declaration.parent)
+            if (declaration.id !== undefined) {
+                this.namedMap.set(declaration.id, declaration.parent)
             }
             if (isContainer(declaration)) {
                 this.add(declaration.constructors)
@@ -469,12 +471,8 @@ export class LinkResolver {
 
     private resolveDeclarations(declarations: Declaration[] = []) {
         for (const declaration of declarations) {
-            if (declaration.reflection) {
-                declaration.excerpt.resolve(this)
-                declaration.docs.resolve(this)
-                // TODO docs headings
-                declaration.reflection = undefined
-            }
+            declaration.excerpt.resolve(this)
+            declaration.docs.resolve(this)
             if (isContainer(declaration)) {
                 this.resolveDeclarations(declaration.constructors?.declarations)
                 this.resolveDeclarations(declaration.callSignatures?.declarations)
@@ -500,15 +498,22 @@ export class LinkResolver {
     }
 }
 
-export async function getExports(entryPoints: string[], tsconfig?: string) {
+export async function getExports(
+    entryPoints: { file: string; id?: string }[],
+    tsconfig?: string,
+    format: 'directory' | 'preserve' | 'file' = 'directory',
+    base = '/',
+    resolveLink?: (id: ReflectionSymbolId) => string | undefined,
+) {
     const app = await Application.bootstrap({
-        entryPoints,
+        entryPoints: entryPoints.map(({ file }) => file),
         tsconfig,
         sort: ['static-first', 'required-first', 'enum-value-ascending', 'source-order'],
         version: true,
         includeVersion: true,
         readme: 'none',
         alwaysCreateEntryPointModule: true,
+        treatValidationWarningsAsErrors: true,
     })
 
     const project = await app.convert()
@@ -525,6 +530,12 @@ export async function getExports(entryPoints: string[], tsconfig?: string) {
     if (project.packageVersion === undefined) {
         throw new Error('failed to load package version')
     }
+    app.validate(project)
+    if (app.logger.hasWarnings() || app.logger.hasErrors()) {
+        throw new Error(
+            `load/validation failed with ${app.logger.warningCount} warning(s) and ${app.logger.errorCount} error(s)`,
+        )
+    }
 
     const slugger = new FileNameSlugger()
 
@@ -539,7 +550,6 @@ export async function getExports(entryPoints: string[], tsconfig?: string) {
 
         const name = module.name.replace(/^\/+/, '').replace(/\/+$/, '')
         const fullName = project.packageName + (name === 'index' ? '' : '/' + name)
-        const id = slugger.slug(name === 'index' ? '' : name)
 
         const sources = module.sources ?? []
         if (sources.length !== 1) {
@@ -548,6 +558,9 @@ export async function getExports(entryPoints: string[], tsconfig?: string) {
             )
         }
         const path = sources[0].fullFileName
+
+        const options = entryPoints.find(({ file }) => resolve(file) === resolve(path))
+        const id = options?.id ?? slugger.slug(name === 'index' ? '' : name)
 
         modules.push({ path, module, fullName, id })
     }
@@ -581,23 +594,19 @@ export async function getExports(entryPoints: string[], tsconfig?: string) {
         entries.push(entryBuilder.build())
     }
 
-    const resolver = new LinkResolver(entries, 'directory', '/astro-notebook/model', (id) => {
-        const mod = id.toDeclarationReference().moduleSource
-        switch (mod) {
-            case 'puppeteer':
-                return `https://pptr.dev/api/puppeteer.${id.qualifiedName.toLowerCase()}`
-            case '@puppeteer/browsers':
-                return `https://pptr.dev/browsers-api/browsers.${id.qualifiedName.toLowerCase()}`
-            case 'astro': {
-                if (id.qualifiedName === 'AstroConfig') {
-                    return 'https://docs.astro.build/en/reference/configuration-reference/'
-                }
-                break
-            }
-        }
-    })
+    const resolver = new LinkResolver(entries, format, base, resolveLink)
 
     resolver.resolveAll()
 
-    return entries
+    const files = new Set<string>()
+
+    for (const named of entries.map((entry) => [entry, ...entry.exports]).flat()) {
+        for (const declaration of named.declarations) {
+            if (declaration.source) {
+                files.add(declaration.source.fullFileName)
+            }
+        }
+    }
+
+    return { entries, files: [...files.values()] }
 }

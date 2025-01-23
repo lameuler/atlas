@@ -28,6 +28,34 @@ export default defineConfig({
                     ],
                 },
             ],
+            reference: {
+                sidebarName: 'API',
+                base: 'reference',
+                entries: [
+                    {
+                        file: '../temp/astro-pdf/src/index.ts',
+                    },
+                    {
+                        file: '../temp/astro-pdf/src/other/index.ts',
+                    },
+                ],
+                tsconfig: '../temp/astro-pdf/tsconfig.json',
+                resolveLink(id) {
+                    const mod = id.toDeclarationReference().moduleSource
+                    switch (mod) {
+                        case 'puppeteer':
+                            return `https://pptr.dev/api/puppeteer.${id.qualifiedName.toLowerCase()}`
+                        case '@puppeteer/browsers':
+                            return `https://pptr.dev/browsers-api/browsers.${id.qualifiedName.toLowerCase()}`
+                        case 'astro': {
+                            if (id.qualifiedName === 'AstroConfig') {
+                                return 'https://docs.astro.build/en/reference/configuration-reference/'
+                            }
+                            break
+                        }
+                    }
+                },
+            },
         }),
     ],
 })

@@ -3,7 +3,6 @@ import { extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { type AstroConfig, type AstroIntegration } from 'astro'
-import _other, { Other } from 'astro-pdf/other'
 import { LocalImageProps } from 'astro/assets'
 import { bgBlue, blue, bold, dim, green, red, yellow } from 'kleur/colors'
 import pMap from 'p-map'
@@ -17,6 +16,7 @@ import {
     getPageOptions,
     mergePages,
 } from './options.js'
+import _other, { Other } from './other/index.js'
 import { FatalError, PageError, processPage } from './page.js'
 import { type ServerOutput, astroPreview } from './server.js'
 
@@ -33,9 +33,8 @@ export function other(): Other {
  * Super real type
  *
  * @remarks
- * Useful for getting {@link kleur/colors#blue | blue} or {@link kleur#blue | blue}
  *
- * Consider using {@link @types/node#} or {@link FakeClass.what }
+ * Consider using {@link FakeClass.what }
  *
  * See also: {@link https://github.com/microsoft/tsdoc}
  */

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { type AstroConfig, preview } from 'astro'
 
 /**
- * @public
+ * {@link Options.server}
  */
 export interface ServerOutput {
     url?: URL

@@ -1,4 +1,4 @@
-import { buildConfig, options } from '@lameuler/atlas:virtual'
+import { buildConfig } from '@lameuler/atlas:virtual'
 import { getCollection } from 'astro:content'
 
 import { getEntryPathname } from './util.js'
@@ -16,52 +16,34 @@ export type ResolvedGroup = {
     nextGroupNav?: boolean
 }
 
-export const groups: ResolvedGroup[] = []
-for (const group of options.sidebar ?? []) {
-    addGroup(group)
-}
-
-const groupMap = new Map<string | symbol, number>()
-
-export function addGroup(
-    group: {
-        name?: string
-        pages: Page[]
-        prevGroupNav?: boolean
-        nextGroupNav?: boolean
-    },
-    key?: string | symbol,
-) {
-    const pages: { href: string; label: string; external?: boolean }[] = []
-    for (const page of group.pages) {
-        const info = getPageInfo(page)
-        if (info) {
-            pages.push(info)
-        }
-    }
-    if (pages.length > 0) {
-        if (key !== undefined) {
-            const i = groupMap.get(key)
-            if (i !== undefined) {
-                groups[i] = {
-                    ...group,
-                    pages,
-                }
-                return
+export function getGroups() {
+    const groups: ResolvedGroup[] = []
+    for (const group of globalThis.atlasSidebar ?? []) {
+        const pages: { href: string; label: string; external?: boolean }[] = []
+        for (const page of group.pages) {
+            const info = getPageInfo(page)
+            if (info) {
+                pages.push(info)
             }
         }
-        const i =
+        if (pages.length > 0) {
             groups.push({
                 ...group,
                 pages,
-            }) - 1
-        if (key !== undefined) {
-            groupMap.set(key, i)
+            })
         }
     }
+    return groups
 }
 
 export type Page = string | { page: string; label: string }
+
+export type Group = {
+    name?: string
+    pages: Page[]
+    prevGroupNav?: boolean
+    nextGroupNav?: boolean
+}
 
 export type PageNavInfo = {
     href: string
@@ -99,10 +81,11 @@ export function getPageGroup(page: Page) {
     if (!info) {
         return
     }
-    return groups.find(({ pages }) => pages.find(({ href }) => href === info.href))?.name
+    return getGroups().find(({ pages }) => pages.find(({ href }) => href === info.href))?.name
 }
 
 export function getNextPage(href: string): PageNavInfo | undefined {
+    const groups = getGroups()
     for (let i = 0; i < groups.length; i++) {
         const group = groups[i]
         for (let j = 0; j < group.pages.length; j++) {
@@ -126,6 +109,7 @@ export function getNextPage(href: string): PageNavInfo | undefined {
 }
 
 export function getPreviousPage(href: string): PageNavInfo | undefined {
+    const groups = getGroups()
     for (let i = 0; i < groups.length; i++) {
         const group = groups[i]
         for (let j = 0; j < group.pages.length; j++) {
