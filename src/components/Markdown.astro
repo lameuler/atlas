@@ -258,4 +258,19 @@
     :global(.dark) section :global(h6) {
         color: #95abbd;
     }
+
+    section :global(:is(h1, h2, h3, h4, h5, h6) > a:last-child:has(> svg:only-child.icon)) {
+        color: var(--line);
+    }
+    section :global(:is(h1, h2, h3, h4, h5, h6):hover > a:last-child:has(> svg:only-child.icon):hover) {
+        color: var(--accent-highlight);
+    }
+    section :global(:is(h1, h2, h3, h4, h5, h6) > a:last-child > svg:only-child.icon) {
+        height: 1em;
+        width: 1em;
+        vertical-align: bottom;
+        display: inline-block;
+        margin-inline: 0.2em;
+        margin-block: calc((var(--height) * 1.8em - 1em) / 2);
+    }
 </style>
