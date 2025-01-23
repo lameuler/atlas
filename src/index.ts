@@ -3,6 +3,7 @@ import sitemap from '@astrojs/sitemap'
 import svelte from '@astrojs/svelte'
 import virtual from '@rollup/plugin-virtual'
 import type { AstroConfig, AstroIntegration } from 'astro'
+import { Element } from 'hast'
 import { h } from 'hastscript'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import { ReflectionSymbolId } from 'typedoc'
@@ -27,6 +28,16 @@ export interface AtlasOptions {
         resolveLink?: (id: ReflectionSymbolId) => string | undefined
     }
 }
+
+const copyIcon = makeIcon([
+    'M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z',
+    'M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1',
+])
+const linkIcon = makeIcon([
+    'M9 15l6 -6',
+    'M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464',
+    'M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463',
+])
 
 export default function atlas(options: AtlasOptions): AstroIntegration {
     const base = (options.reference?.base ?? 'reference').replace(/^\/+/, '').replace(/\/+$/, '')
@@ -101,6 +112,15 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                                 dark: 'github-dark',
                             },
                             defaultColor: false,
+                            transformers: [
+                                {
+                                    pre(node: Element) {
+                                        node.children.push(
+                                            h('button', { dataCopyPrevious: '' }, copyIcon),
+                                        )
+                                    },
+                                },
+                            ],
                         },
                     },
                 })
@@ -121,23 +141,7 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                     markdown: {
                         rehypePlugins: [
                             rehypeHeadingIds,
-                            [
-                                rehypeAutolinkHeadings,
-                                {
-                                    behavior: 'append',
-                                    content: h(
-                                        'svg.icon',
-                                        { viewBox: '0 0 24 24', width: 20, height: 20 },
-                                        h('path', { d: 'M9 15l6 -6' }),
-                                        h('path', {
-                                            d: 'M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464',
-                                        }),
-                                        h('path', {
-                                            d: 'M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463',
-                                        }),
-                                    ),
-                                },
-                            ],
+                            [rehypeAutolinkHeadings, { behavior: 'append', content: linkIcon }],
                         ],
                     },
                 })
@@ -157,4 +161,12 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
             },
         },
     }
+}
+
+function makeIcon(paths: string[], size = 20) {
+    return h(
+        'svg.icon',
+        { viewBox: '0 0 24 24', width: size, height: size },
+        ...paths.map((d) => h('path', { d })),
+    )
 }

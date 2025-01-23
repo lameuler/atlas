@@ -30,6 +30,58 @@
         margin: calc(var(--height) * 1em) -0.4rem;
         line-height: max(var(--height) * 1.5, 1);
     }
+    section :global(.astro-code) {
+        position: relative;
+    }
+    section :global(.astro-code),
+    section :global(.astro-code span) {
+        color: var(--shiki-light);
+        background-color: var(--shiki-light-bg);
+        font-style: var(--shiki-light-font-style);
+        font-weight: var(--shiki-light-font-weight);
+        text-decoration: var(--shiki-light-text-decoration);
+    }
+
+    :global(.dark) section :global(.astro-code),
+    :global(.dark) section :global(.astro-code span) {
+        color: var(--shiki-dark);
+        background-color: var(--shiki-dark-bg);
+        font-style: var(--shiki-dark-font-style);
+        font-weight: var(--shiki-dark-font-weight);
+        text-decoration: var(--shiki-dark-text-decoration);
+    }
+    section :global(.astro-code button[data-copy-previous]) {
+        position: absolute;
+        color: var(--color);
+        top: 0;
+        right: 0;
+        padding: 0.3rem;
+        margin: 0.3rem;
+        opacity: 0;
+        display: block;
+        border-radius: 0.4rem;
+        background-color: var(--bg-pre);
+        border: 1px solid var(--bg-code);
+        z-index: 10;
+        visibility: hidden;
+        transition-property: opacity, visibility;
+        transition-duration: 150ms;
+        transition-timing-function: ease-in-out;
+    }
+    section :global(.astro-code:hover button[data-copy-previous]) {
+        opacity: 0.5;
+        visibility: visible;
+    }
+    section :global(.astro-code:hover button[data-copy-previous]:hover) {
+        opacity: 0.9;
+        background-color: var(--bg-code);
+        border: 1px solid var(--line);
+    }
+    section :global(.astro-code button[data-copy-previous] > svg.icon) {
+        height: 1.25rem;
+        width: 1.25rem;
+        display: block;
+    }
 
     section :global(section) {
         margin: calc(var(--height) * 1.5em) 0 0 0;
@@ -262,7 +314,8 @@
     section :global(:is(h1, h2, h3, h4, h5, h6) > a:last-child:has(> svg:only-child.icon)) {
         color: var(--line);
     }
-    section :global(:is(h1, h2, h3, h4, h5, h6):hover > a:last-child:has(> svg:only-child.icon):hover) {
+    section
+        :global(:is(h1, h2, h3, h4, h5, h6):hover > a:last-child:has(> svg:only-child.icon):hover) {
         color: var(--accent-highlight);
     }
     section :global(:is(h1, h2, h3, h4, h5, h6) > a:last-child > svg:only-child.icon) {
@@ -274,3 +327,28 @@
         margin-block: calc((var(--height) * 1.8em - 1em) / 2);
     }
 </style>
+
+<script>
+    for (const button of document.querySelectorAll<HTMLElement>('button[data-copy-previous]')) {
+        let saved: string | undefined = undefined
+        let timeout: number | NodeJS.Timeout = -1
+        button.addEventListener('click', async () => {
+            const text = button.previousElementSibling?.textContent
+            const html = (saved ??= button.innerHTML)
+            if (typeof text !== 'string') return
+            try {
+                await navigator.clipboard.writeText(text)
+                button.innerHTML =
+                    '<svg width="20" height="20" viewBox="0 0 24 24" class="icon"><path d="M5 12l5 5l10 -10"/></svg>'
+            } catch (e) {
+                button.innerHTML =
+                    '<svg width="20" height="20" viewBox="0 0 24 24" class="icon"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M18.364 5.636l-12.728 12.728"/></svg>'
+            }
+            clearTimeout(timeout)
+            timeout = setTimeout(() => {
+                button.innerHTML = html
+                saved = undefined
+            }, 500)
+        })
+    }
+</script>
