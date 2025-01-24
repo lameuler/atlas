@@ -23,9 +23,14 @@ export interface AtlasOptions {
     reference?: {
         sidebarName?: string
         base?: string
-        entries: { file: string; id?: string }[]
+        entries: string[]
         tsconfig?: string
         resolveLink?: (id: ReflectionSymbolId) => string | undefined
+        entryPath?: (entryName: string, packageName: string) => string | undefined
+        releaseInfo?: (packageVersion: string, packageName: string, entryName: string) => {
+            name: string,
+            url?: string
+        }
     }
 }
 
@@ -53,6 +58,8 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
             config.build.format,
             config.base + '/' + base,
             options.reference.resolveLink,
+            options.reference.entryPath,
+            options.reference.releaseInfo
         )
         globalThis.atlasReference = {
             pages: [],

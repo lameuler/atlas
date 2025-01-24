@@ -31,14 +31,7 @@ export default defineConfig({
             reference: {
                 sidebarName: 'API',
                 base: 'reference',
-                entries: [
-                    {
-                        file: '../temp/astro-pdf/src/index.ts',
-                    },
-                    {
-                        file: '../temp/astro-pdf/src/other/index.ts',
-                    },
-                ],
+                entries: ['../temp/astro-pdf/src/index.ts','../temp/astro-pdf/src/other/index.ts'],
                 tsconfig: '../temp/astro-pdf/tsconfig.json',
                 resolveLink(id) {
                     const mod = id.toDeclarationReference().moduleSource
@@ -55,6 +48,12 @@ export default defineConfig({
                         }
                     }
                 },
+                releaseInfo(version) {
+                    return {
+                        name: `astro-pdf@${version}`,
+                        url: `https://github.com/lameuler/astro-pdf/releases/tag/astro-pdf%40${version}`
+                    }
+                }
             },
         }),
     ],

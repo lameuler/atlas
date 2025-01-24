@@ -168,6 +168,7 @@ export const rehypeLinks: Plugin<[AstroConfig], Root> = (config) => {
 
                         const from = getEntryPathname(fileId, config.base, 'preserve')
                         const url = new URL(href, new URL(from, 'base://'))
+                        // TODO modify pathname to add/remove trailing slash based on config.build.format
                         node.properties.href = url.pathname + url.search + url.hash
                     }),
             )

@@ -1,5 +1,3 @@
-import { resolve } from 'node:path'
-
 import Slugger, { slug } from 'github-slugger'
 import {
     Application,
@@ -36,6 +34,10 @@ export interface Named {
         slug: string
         text: string
     }[]
+    release?: {
+        name: string,
+        url?: string
+    }
 }
 
 export type DeclarationKind =
@@ -148,7 +150,7 @@ class NamedMap {
             kind,
             excerpt: Excerpt.of(ref),
             docs: Docs.of(ref, named.kind === 'member'),
-            source: ref.sources?.[0],
+            source: ref.sources?.[Math.min(named.declarations.length, ref.sources.length - 1)],
         }
         if (ref.isDeclaration() && (kind === 'Class' || kind === 'Interface')) {
             const members = new NamedMap('member', named)
@@ -289,6 +291,7 @@ class EntryBuilder {
         private name: string,
         id: string,
         private slugger: FileNameSlugger,
+        private release?: EntryPoint['release']
     ) {
         this.entry = {
             name: this.name,
@@ -297,6 +300,7 @@ class EntryBuilder {
             exports: [],
             declarations: [],
             headings: [],
+            release
         }
         this.exports = new NamedMap('export', this.entry)
     }
@@ -333,6 +337,7 @@ class EntryBuilder {
                     }
                 } else {
                     setAllHeadings(named)
+                    named.release = this.release
                     this.entry.exports.push(named)
                 }
             })
@@ -500,14 +505,19 @@ export class LinkResolver {
 }
 
 export async function getExports(
-    entryPoints: { file: string; id?: string }[],
+    entryPoints: string[],
     tsconfig?: string,
     format: 'directory' | 'preserve' | 'file' = 'directory',
     base = '/',
     resolveLink?: (id: ReflectionSymbolId) => string | undefined,
+    entryPath?: (entryName: string, packageName: string) => string | undefined,
+    releaseInfo?: (packageVersion: string, packageName: string, entryName: string) => {
+        name: string,
+        url?: string
+    }
 ) {
     const app = await Application.bootstrap({
-        entryPoints: entryPoints.map(({ file }) => file),
+        entryPoints,
         tsconfig,
         sort: ['static-first', 'required-first', 'enum-value-ascending', 'source-order'],
         version: true,
@@ -560,8 +570,7 @@ export async function getExports(
         }
         const path = sources[0].fullFileName
 
-        const options = entryPoints.find(({ file }) => resolve(file) === resolve(path))
-        const id = options?.id ?? slugger.slug(name === 'index' ? '' : name)
+        const id = entryPath?.(module.name, project.packageName) ?? slugger.slug(name === 'index' ? '' : name)
 
         modules.push({ path, module, fullName, id })
     }
@@ -569,7 +578,7 @@ export async function getExports(
     const entries: EntryPoint[] = []
 
     for (const { module, fullName, id } of modules) {
-        const entryBuilder = new EntryBuilder(fullName, id, slugger)
+        const entryBuilder = new EntryBuilder(fullName, id, slugger, releaseInfo?.(project.packageVersion, project.packageName, module.name))
 
         if (!module.children) {
             throw new Error(`module ${fullName} has no children`)

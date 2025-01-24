@@ -26,17 +26,22 @@ const { named, href } = Astro.props
 const group = getPageGroup(href)
 const prev = getPreviousPage(href)
 const next = getNextPage(href)
+
+// TODO list exports for entrypoints
 ---
 
 <PageLayout title={named.name} {href} headings={named.headings} {group} {prev} {next}>
-    <!-- TODO release link -->
-    <a slot="subtitle" href="https://github.com/lameuler/astro-pdf/releases/tag/astro-pdf%401.7.0"
-        >astro-pdf@1.7.0</a
-    >
+    { named.release && 
+    <span slot="subtitle">{ named.release.url ? 
+        <a href={named.release.url}>{named.release.name}</a> : 
+        <>{named.release.name}</>
+    }
+    </span>
+    }
     {
         named.declarations.map((dec) => (
             <section>
-                <DeclarationSection declaration={dec} />
+                <DeclarationSection declaration={dec} source />
                 {isContainer(dec) && (
                     <>
                         <NamedMember named={dec.constructors} />
@@ -46,20 +51,18 @@ const next = getNextPage(href)
                         <MemberList list={dec.members} />
                     </>
                 )}
-                {/* TODO link to source */}
             </section>
         ))
     }
 </PageLayout>
 
 <style>
-    a {
+    span {
         background-color: var(--bg-code);
         padding: 0.2em 0.6em;
         border-radius: 1em;
-        color: var(--accent);
     }
-    a:hover {
+    span a:hover {
         text-decoration: underline;
         color: var(--accent-highlight);
     }
