@@ -22,3 +22,17 @@ export function getEntryPathname(
     }
     return href
 }
+
+export function canonicalPathname(pathname: string, buildFormat: 'directory' | 'file' | 'preserve') {
+    pathname = pathname.replace(/\/+$/, '/')
+    if (buildFormat === 'preserve' || pathname === '/') {
+        return pathname
+    }
+    if (buildFormat === 'file' && pathname.endsWith('/')) {
+        return pathname.slice(0, -1)
+    }
+    if (buildFormat === 'directory' && !pathname.endsWith('/')) {
+        return pathname + '/'
+    }
+    return pathname
+}

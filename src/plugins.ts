@@ -8,7 +8,7 @@ import type { Plugin } from 'unified'
 import { visit } from 'unist-util-visit'
 
 import { getId } from './content.js'
-import { getEntryPathname } from './util.js'
+import { canonicalPathname, getEntryPathname } from './util.js'
 
 const ALERTS: Record<string, { title: string; icon: string[] }> = {
     NOTE: {
@@ -168,8 +168,7 @@ export const rehypeLinks: Plugin<[AstroConfig], Root> = (config) => {
 
                         const from = getEntryPathname(fileId, config.base, 'preserve')
                         const url = new URL(href, new URL(from, 'base://'))
-                        // TODO modify pathname to add/remove trailing slash based on config.build.format
-                        node.properties.href = url.pathname + url.search + url.hash
+                        node.properties.href = canonicalPathname(url.pathname, config.build.format) + url.search + url.hash
                     }),
             )
         })

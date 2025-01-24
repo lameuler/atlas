@@ -30,6 +30,10 @@ title: Troubleshooting
 
 [white space.md](white%20space.md)
 
+## This is a really long heading. Why is it this long? Yes.
+
+This is [`astro-pdf`](reference/). It has [`Options`](reference/options).
+
 ###### whatAGreatDayRightGuys
 
 > [!NOTE]
