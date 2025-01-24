@@ -1,4 +1,5 @@
 ---
+import Alert from '../../components/Alert.astro'
 import { Docs } from '../docs.js'
 import DocsBlockInline from './DocsBlockInline.astro'
 import DocsBlockSection from './DocsBlockSection.astro'
@@ -8,7 +9,20 @@ interface Props {
     docs: Docs
 }
 const { docs } = Astro.props
+
+const warning = docs.warning && {
+    title: docs.warning.heading?.text,
+    content: await docs.warning.render(),
+}
 ---
+
+{
+    warning && (
+        <Alert kind="warning" title={warning.title}>
+            <Fragment set:html={warning.content} />
+        </Alert>
+    )
+}
 
 {docs.summary && <DocsBlockSection block={docs.summary} />}
 

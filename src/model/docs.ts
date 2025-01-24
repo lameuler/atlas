@@ -2,6 +2,7 @@ import {
     CommentDisplayPart,
     DeclarationReflection,
     Reflection,
+    ReflectionKind,
     ReflectionSymbolId,
     SignatureReflection,
     makeRecursiveVisitor,
@@ -96,6 +97,8 @@ export class DocsBlock {
 }
 
 interface DocsOptions {
+    readonly warning?: DocsBlock
+    readonly shortSummary?: DocsBlock
     readonly summary?: DocsBlock
     readonly params?: {
         readonly head?: DocsBlock
@@ -112,6 +115,8 @@ interface DocsOptions {
 }
 
 export class Docs implements DocsOptions {
+    readonly warning
+    readonly shortSummary
     readonly summary
     readonly remarks
     readonly defaultValue
@@ -121,6 +126,12 @@ export class Docs implements DocsOptions {
     readonly examples
 
     private constructor(options: DocsOptions) {
+        if (options.warning?.heading?.text) {
+            this.warning = options.warning
+        }
+        if (options.shortSummary?.isEmpty === false) {
+            this.shortSummary = options.shortSummary
+        }
         if (options.summary?.isEmpty === false) {
             this.summary = options.summary
         }
@@ -146,6 +157,12 @@ export class Docs implements DocsOptions {
 
     visitBlocks<T = unknown>(visitor: (block: DocsBlock, kind: keyof DocsOptions) => T) {
         const results: T[] = []
+        if (this.warning) {
+            results.push(visitor(this.warning, 'warning'))
+        }
+        if (this.shortSummary) {
+            results.push(visitor(this.shortSummary, 'shortSummary'))
+        }
         if (this.summary) {
             results.push(visitor(this.summary, 'summary'))
         }
@@ -183,6 +200,31 @@ export class Docs implements DocsOptions {
         const comment = reflection.comment
         if (!comment) {
             return new Docs({})
+        }
+        let warning: DocsBlock | undefined = undefined
+        if (
+            comment.hasModifier('@alpha') ||
+            comment.hasModifier('@beta') ||
+            comment.hasModifier('@experimental')
+        ) {
+            const kind =
+                reflection instanceof SignatureReflection ? reflection.parent.kind : reflection.kind
+            warning = new DocsBlock(
+                [
+                    {
+                        kind: 'text',
+                        text:
+                            'This ' +
+                            ReflectionKind.singularString(kind).toLowerCase() +
+                            ' is experimental and may change or be removed in future versions.',
+                    },
+                ],
+                { depth: 5, text: 'Experimental' },
+            )
+        }
+        const deprecated = comment.getTag('@deprecated')
+        if (deprecated) {
+            warning = new DocsBlock(deprecated.content, { depth: 5, text: 'Deprecated' })
         }
         const typeParams: DocsBlock[] = []
         for (const tag of comment.getTags('@typeParam')) {
@@ -275,6 +317,8 @@ export class Docs implements DocsOptions {
             }
         }
         return new Docs({
+            warning,
+            shortSummary: new DocsBlock(comment.getShortSummary(true)),
             summary: new DocsBlock(comment.summary),
             typeParams: {
                 head: new DocsBlock([], { depth: 5, text: 'Type Parameters' }),

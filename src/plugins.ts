@@ -10,7 +10,7 @@ import { visit } from 'unist-util-visit'
 import { getId } from './content.js'
 import { canonicalPathname, getEntryPathname } from './util.js'
 
-const ALERTS: Record<string, { title: string; icon: string[] }> = {
+export const ALERTS: Record<string, { title: string; icon: string[] }> = {
     NOTE: {
         title: 'Note',
         icon: ['M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0', 'M12 9h.01', 'M11 12h1v4h1'],
@@ -168,7 +168,10 @@ export const rehypeLinks: Plugin<[AstroConfig], Root> = (config) => {
 
                         const from = getEntryPathname(fileId, config.base, 'preserve')
                         const url = new URL(href, new URL(from, 'base://'))
-                        node.properties.href = canonicalPathname(url.pathname, config.build.format) + url.search + url.hash
+                        node.properties.href =
+                            canonicalPathname(url.pathname, config.build.format) +
+                            url.search +
+                            url.hash
                     }),
             )
         })

@@ -1,0 +1,24 @@
+---
+import { ALERTS } from '../plugins.js'
+
+interface Props {
+    kind?: string
+    title?: string
+}
+let kind = Astro.props.kind?.toUpperCase()
+if (!kind || !(kind in ALERTS)) {
+    kind = 'NOTE'
+}
+const alert = ALERTS[kind]
+const title = Astro.props.title || alert.title
+---
+
+<aside class={kind.toLowerCase()}>
+    <div class="title">
+        <svg viewBox="0 0 24 24" width="20" height="20" class="icon">
+            {alert.icon.map((d) => <path {d} />)}
+        </svg>
+        <div>{title}</div>
+    </div>
+    <slot />
+</aside>

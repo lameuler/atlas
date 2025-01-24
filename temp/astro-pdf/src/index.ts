@@ -1,3 +1,10 @@
+/**
+ * This is the documentation for `astro-pdf`.
+ *
+ * > [!IMPORTANT]
+ * > These docs are a work in progress and may not be complete
+ * @module
+ */
 import EventEmitter from 'node:events'
 import { extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -19,6 +26,8 @@ import {
 import _other, { Other } from './other/index.js'
 import { FatalError, PageError, processPage } from './page.js'
 import { type ServerOutput, astroPreview } from './server.js'
+
+const VERSION = '0'
 
 /**
  * The other entrypoint of
@@ -110,9 +119,20 @@ export interface FakeInterface<T> {
      * @param b - Function to convert each item to string
      *
      * @typeParam T - The type of each item to be converted to string
-     *
+     * @alpha
      */
     fn: { <T>(a: T[], b: (t: T) => string): string[] } | false
+    /**
+     * Convert a number to a string
+     * @param n The number to convert to string
+     */
+    convert(n: number): string
+    /**
+     * Convert a string to a number
+     * @param s The string to convert to number
+     * @beta
+     */
+    convert(s: string): number
 }
 
 const f: FakeInterface<string> = {} as FakeInterface<string>

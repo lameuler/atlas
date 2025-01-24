@@ -17,6 +17,7 @@ export interface EntryPoint extends Named {
     kind: 'entry'
     exports: NamedList
     groups: ExportGroup[]
+    docs?: DocsBlock
 }
 
 export interface Named {
@@ -379,7 +380,7 @@ class EntryBuilder {
         return declaration
     }
 
-    build(): EntryPoint {
+    build(reflection: DeclarationReflection): EntryPoint {
         if (this.built) {
             return this.entry
         }
@@ -406,6 +407,12 @@ class EntryBuilder {
                 this.entry.exports.push(named)
             }
         })
+        if (reflection.comment) {
+            const block = new DocsBlock(reflection.comment.summary)
+            if (!block.isEmpty) {
+                this.entry.docs = block
+            }
+        }
         this.entry.groups = getExportGroups(this.entry.exports)
         setAllHeadings(this.entry)
 
@@ -561,19 +568,6 @@ export class LinkResolver {
             }
         }
     }
-
-    private resolveHref(href: string | false | undefined) {
-        if (typeof href !== 'string') {
-            return undefined
-        }
-        if (this.buildFormat === 'directory' && !href.endsWith('/')) {
-            href += '/'
-        }
-        if (this.buildFormat === 'file') {
-            href = href.replace(/\/+$/, '')
-        }
-        return this.base.replace(/\/+$/, '') + '/' + href.replace(/^\/+/, '')
-    }
 }
 
 export async function getExports(
@@ -686,7 +680,7 @@ export async function getExports(
             }
         }
 
-        entries.push(entryBuilder.build())
+        entries.push(entryBuilder.build(module))
     }
 
     const resolver = new LinkResolver(entries, format, base, resolveLink)

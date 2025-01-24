@@ -12,6 +12,7 @@
         "sourceMap": false,
         "declaration": true,
         "declarationMap": true,
-        "emitDeclarationOnly": true
+        "emitDeclarationOnly": true,
+        "stripInternal": true
     }
 }

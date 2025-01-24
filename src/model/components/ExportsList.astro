@@ -20,7 +20,7 @@ const { heading, groups } = Astro.props
             <ul>
                 {declarations.map(({ docs, parent }) => (
                     <li>
-                        <DocsBlockInline block={docs.summary ?? new DocsBlock([])} sep="–">
+                        <DocsBlockInline block={docs.shortSummary ?? new DocsBlock([])} sep="–">
                             <b slot="heading">
                                 {parent.href ? (
                                     <a href={parent.href}>

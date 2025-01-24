@@ -40,8 +40,8 @@ export async function openFd(
     return { fd, path: p }
 }
 
-// eslint-disable-next-line n/no-unsupported-features/node-builtins
 export async function pipeToFd(
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
     stream: ReadableStream<Uint8Array>,
     fd: FileHandle,
     signal?: AbortSignal,
