@@ -86,6 +86,11 @@ export interface Declaration {
     excerpt: Excerpt
     docs: Docs
     source: SourceReference | undefined
+    inheritedFrom?: {
+        id: number
+        name: string
+        href?: string
+    }
 }
 
 export interface ContainerDeclaration extends Declaration {
@@ -166,6 +171,22 @@ export function getExportGroups(exports: NamedList) {
     return [classes, interfaces, types, functions, variables].filter((group) => !group.isEmpty())
 }
 
+function getInheritedFrom(reflection: DeclarationReflection | SignatureReflection) {
+    const source = reflection.inheritedFrom?.reflection
+    if (source) {
+        let parent = source.parent
+        while (parent) {
+            if (parent.kindOf([ReflectionKind.Class, ReflectionKind.Interface])) {
+                return {
+                    id: source.id,
+                    name: parent.name,
+                }
+            }
+            parent = parent.parent
+        }
+    }
+}
+
 class NamedMap {
     private map = new Map<string | symbol, Named>()
 
@@ -203,6 +224,10 @@ class NamedMap {
         const decRef = ref instanceof SignatureReflection ? ref.parent : ref
         const kind = getDeclarationKind(decRef.kind)
         if (!kind) return
+        if (ref.inheritedFrom && !ref.inheritedFrom.reflection) {
+            return
+        }
+
         const named = this.get(ref.name, decRef.id)
         const declaration: Declaration = {
             parent: named,
@@ -214,7 +239,9 @@ class NamedMap {
             excerpt: Excerpt.of(ref),
             docs: Docs.of(ref, named.kind === 'member'),
             source: ref.sources?.[Math.min(named.declarations.length, ref.sources.length - 1)],
+            inheritedFrom: getInheritedFrom(ref),
         }
+
         if (ref.isDeclaration() && (kind === 'Class' || kind === 'Interface')) {
             const members = new NamedMap('member', named)
             const staticMembers = new NamedMap('member', named)
@@ -230,6 +257,9 @@ class NamedMap {
                 const signatures = child.getNonIndexSignatures()
                 if (signatures.length > 0) {
                     for (const signature of signatures) {
+                        if (signature.inheritedFrom && !signature.inheritedFrom.reflection) {
+                            continue
+                        }
                         if (child.kind === ReflectionKind.Constructor) {
                             constructors.declarations.push({
                                 parent: constructors,
@@ -239,6 +269,7 @@ class NamedMap {
                                 excerpt: Excerpt.of(signature),
                                 docs: Docs.of(signature, true),
                                 source: signature.sources?.[0],
+                                inheritedFrom: getInheritedFrom(signature),
                             })
                         } else if (child.flags.isStatic) {
                             staticMembers.addDeclaration(signature)
@@ -304,15 +335,22 @@ function getSignatureDeclarations(
     kind: Omit<DeclarationKind, 'Class' | 'Interface'>,
 ): Named | undefined {
     if (signatures && signatures.length > 0) {
-        const declarations: Declaration[] = signatures.map((signature) => ({
-            parent,
-            id: signature.id,
-            heading: { depth: 5, slug: false, text: 'Signature:' },
-            kind,
-            excerpt: Excerpt.of(signature),
-            docs: Docs.of(signature, true),
-            source: signature.sources?.[0],
-        }))
+        const declarations: Declaration[] = []
+        for (const signature of signatures) {
+            if (signature.inheritedFrom && !signature.inheritedFrom.reflection) {
+                continue
+            }
+            declarations.push({
+                parent,
+                id: signature.id,
+                heading: { depth: 5, slug: false, text: 'Signature:' },
+                kind,
+                excerpt: Excerpt.of(signature),
+                docs: Docs.of(signature, true),
+                source: signature.sources?.[0],
+                inheritedFrom: getInheritedFrom(signature),
+            })
+        }
         return {
             name,
             parent,
@@ -486,8 +524,6 @@ export class LinkResolver {
 
     constructor(
         private entries: EntryPoint[],
-        private buildFormat: 'file' | 'preserve' | 'directory',
-        private base: string,
         private resolveExternal?: (id: ReflectionSymbolId) => string | undefined,
     ) {
         for (const entry of this.entries) {
@@ -544,9 +580,7 @@ export class LinkResolver {
 
     resolveAll() {
         for (const entry of this.entries) {
-            // TODO entry docs
-            // entry.docs = resolveDocs
-            // entry.reflection = undefined
+            entry.docs?.resolve(this)
             this.resolveDeclarations(entry.declarations)
             for (const exported of entry.exports) {
                 this.resolveDeclarations(exported.declarations)
@@ -558,6 +592,9 @@ export class LinkResolver {
         for (const declaration of declarations) {
             declaration.excerpt.resolve(this)
             declaration.docs.resolve(this)
+            if (declaration.inheritedFrom) {
+                declaration.inheritedFrom.href ??= this.resolve(declaration.inheritedFrom.id)
+            }
             if (isContainer(declaration)) {
                 this.resolveDeclarations(declaration.constructors?.declarations)
                 this.resolveDeclarations(declaration.callSignatures?.declarations)
@@ -683,7 +720,7 @@ export async function getExports(
         entries.push(entryBuilder.build(module))
     }
 
-    const resolver = new LinkResolver(entries, format, base, resolveLink)
+    const resolver = new LinkResolver(entries, resolveLink)
 
     resolver.resolveAll()
 

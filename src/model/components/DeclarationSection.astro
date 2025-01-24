@@ -9,7 +9,7 @@ interface Props {
     source?: boolean
 }
 
-const { heading, excerpt, docs, source } = Astro.props.declaration
+const { heading, excerpt, docs, source, inheritedFrom } = Astro.props.declaration
 ---
 
 <Heading {...heading} />
@@ -29,10 +29,18 @@ const { heading, excerpt, docs, source } = Astro.props.declaration
         </nav>
     )
 }
+{
+    inheritedFrom?.href && (
+        <nav>
+            <b>Inherited from:</b>
+            <a href={inheritedFrom.href}>
+                <code>{inheritedFrom.name}</code>
+            </a>
+        </nav>
+    )
+}
 
 <DocsSection {docs} />
-
-{/* TODO show inherited from */}
 
 <style>
     nav {

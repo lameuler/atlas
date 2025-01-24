@@ -1,6 +1,8 @@
 /**
  * This is the documentation for `astro-pdf`.
  *
+ * See {@link Options} for the configuration options.
+ *
  * > [!IMPORTANT]
  * > These docs are a work in progress and may not be complete
  * @module
