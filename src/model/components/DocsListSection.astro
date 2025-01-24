@@ -1,17 +1,16 @@
 ---
-import { DocsBlock, DocsHeading } from '../docs'
+import { DocsBlock } from '../docs'
 import DocsBlockInline from './DocsBlockInline.astro'
-import Heading from './Heading.astro'
+import DocsBlockSection from './DocsBlockSection.astro'
 
 interface Props {
-    heading?: DocsHeading
+    head?: DocsBlock
     members: readonly DocsBlock[]
 }
-const { heading, members } = Astro.props
+const { head, members } = Astro.props
 ---
 
-<section>
-    {heading && <Heading {...heading} />}
+<DocsBlockSection block={head ?? new DocsBlock([])}>
     <ul>
         {
             members.map((block) => (
@@ -21,4 +20,4 @@ const { heading, members } = Astro.props
             ))
         }
     </ul>
-</section>
+</DocsBlockSection>

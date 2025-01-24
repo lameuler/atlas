@@ -8,10 +8,12 @@ interface Props {
 
 const { block } = Astro.props
 
-const html = await block.render()
+const html = Astro.slots.has('default') ? '' : await block.render()
 ---
 
 <section>
-    {block?.heading && <Heading {...block.heading} />}
-    <Fragment set:html={html} />
+    <slot name="heading">{block?.heading && <Heading {...block.heading} />}</slot>
+    <slot>
+        {html && <Fragment set:html={html} />}
+    </slot>
 </section>

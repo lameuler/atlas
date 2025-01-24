@@ -1,0 +1,39 @@
+---
+import { DocsBlock, DocsHeading } from '../docs'
+import { ExportGroup } from '../model.js'
+import DocsBlockInline from './DocsBlockInline.astro'
+import Heading from './Heading.astro'
+
+interface Props {
+    heading: DocsHeading
+    groups: ExportGroup[]
+}
+
+const { heading, groups } = Astro.props
+---
+
+<Heading {...heading} />
+{
+    groups.map(({ heading, declarations }) => (
+        <>
+            <Heading {...heading} />
+            <ul>
+                {declarations.map(({ docs, parent }) => (
+                    <li>
+                        <DocsBlockInline block={docs.summary ?? new DocsBlock([])} sep="–">
+                            <b slot="heading">
+                                {parent.href ? (
+                                    <a href={parent.href}>
+                                        <code>{parent.name}</code>
+                                    </a>
+                                ) : (
+                                    <code>{parent.name}</code>
+                                )}
+                            </b>
+                        </DocsBlockInline>
+                    </li>
+                ))}
+            </ul>
+        </>
+    ))
+}

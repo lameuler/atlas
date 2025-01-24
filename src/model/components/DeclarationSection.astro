@@ -15,12 +15,20 @@ const { heading, excerpt, docs, source } = Astro.props.declaration
 <Heading {...heading} />
 
 <CodeExcerpt {excerpt} />
-{ Astro.props.source === true && source?.url && <nav>
-    <a href={source.url}>
-        <svg width="20" height="20" viewBox="0 0 24 24" class="icon"><path d="M7 8l-4 4l4 4" /><path d="M17 8l4 4l-4 4" /><path d="M14 4l-4 16" /></svg>
-        View source code
-    </a>
-</nav> }
+{
+    Astro.props.source === true && source?.url && (
+        <nav>
+            <a href={source.url}>
+                <svg width="20" height="20" viewBox="0 0 24 24" class="icon">
+                    <path d="M7 8l-4 4l4 4" />
+                    <path d="M17 8l4 4l-4 4" />
+                    <path d="M14 4l-4 16" />
+                </svg>
+                View source code
+            </a>
+        </nav>
+    )
+}
 
 <DocsSection {docs} />
 

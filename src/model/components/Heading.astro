@@ -6,7 +6,7 @@ interface Props extends Partial<DocsHeading> {
     inline?: boolean
 }
 const { depth, slug, text, code, inline } = Astro.props
-const id = slug || undefined
+const id = typeof slug === 'string' ? slug : undefined
 ---
 
 {

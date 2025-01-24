@@ -1,11 +1,12 @@
 ---
 import { type GetStaticPaths } from 'astro'
 import PageLayout from '../components/PageLayout.astro'
-import { isContainer } from '../model/model.js'
+import { isContainer, isEntry } from '../model/model.js'
 import NamedMember from '../model/components/NamedMember.astro'
 import MemberList from '../model/components/MemberList.astro'
 import { getNextPage, getPageGroup, getPreviousPage } from '../sidebar'
 import DeclarationSection from '../model/components/DeclarationSection.astro'
+import ExportsList from '../model/components/ExportsList.astro'
 
 export const getStaticPaths = (async () => {
     return (
@@ -26,18 +27,21 @@ const { named, href } = Astro.props
 const group = getPageGroup(href)
 const prev = getPreviousPage(href)
 const next = getNextPage(href)
-
-// TODO list exports for entrypoints
 ---
 
 <PageLayout title={named.name} {href} headings={named.headings} {group} {prev} {next}>
-    { named.release && 
-    <span slot="subtitle">{ named.release.url ? 
-        <a href={named.release.url}>{named.release.name}</a> : 
-        <>{named.release.name}</>
+    {
+        named.release && (
+            <span slot="subtitle">
+                {named.release.url ? (
+                    <a href={named.release.url}>{named.release.name}</a>
+                ) : (
+                    <>{named.release.name}</>
+                )}
+            </span>
+        )
     }
-    </span>
-    }
+    {isEntry(named) && <ExportsList heading={named.exports.heading} groups={named.groups} />}
     {
         named.declarations.map((dec) => (
             <section>

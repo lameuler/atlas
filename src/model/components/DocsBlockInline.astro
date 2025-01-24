@@ -9,18 +9,20 @@ interface Props {
 
 const { block, sep } = Astro.props
 
-const html = await block.render(true)
+const html = Astro.slots.has('default') ? '-' : await block.render(true)
 ---
 
 {
-    block?.heading && (
+    (block?.heading || Astro.slots.has('heading')) && (
         <>
-            <Heading {...block.heading} inline />
-            {sep ? <span>{sep}</span> : ' '}
+            <slot name="heading">{block?.heading && <Heading {...block.heading} inline />}</slot>
+            {html && (sep ? <span>{sep}</span> : ' ')}
         </>
     )
 }
-<Fragment set:html={html} />
+<slot>
+    {html && <Fragment set:html={html} />}
+</slot>
 
 <style>
     span {

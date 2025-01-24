@@ -36,7 +36,7 @@ class DocsReference {
 export interface DocsHeading {
     depth: number
     text: string
-    slug?: string | false
+    slug?: string | boolean
     code?: boolean
 }
 
@@ -62,6 +62,9 @@ export class DocsBlock {
                 }
             }
         }
+        if (this.heading) {
+            this.heading.slug ??= false
+        }
     }
 
     get content() {
@@ -85,16 +88,21 @@ export class DocsBlock {
         const processor = inline ? await getInlineProcessor() : await getProcessor()
         return (await processor.process(this.content)).toString()
     }
+    copyContent(heading?: DocsHeading) {
+        const block = new DocsBlock([], heading)
+        block.#parts = [...this.#parts]
+        return block
+    }
 }
 
 interface DocsOptions {
     readonly summary?: DocsBlock
     readonly params?: {
-        readonly heading?: DocsHeading
+        readonly head?: DocsBlock
         readonly members: readonly DocsBlock[]
     }
     readonly typeParams?: {
-        readonly heading?: DocsHeading
+        readonly head?: DocsBlock
         readonly members: readonly DocsBlock[]
     }
     readonly defaultValue?: DocsBlock
@@ -141,9 +149,14 @@ export class Docs implements DocsOptions {
         if (this.summary) {
             results.push(visitor(this.summary, 'summary'))
         }
-        // TODO visit param head
+        if (this.typeParams?.head) {
+            results.push(visitor(this.typeParams.head, 'typeParams'))
+        }
         for (const typeParam of this.typeParams?.members ?? []) {
             results.push(visitor(typeParam, 'typeParams'))
+        }
+        if (this.params?.head) {
+            results.push(visitor(this.params.head, 'params'))
         }
         for (const param of this.params?.members ?? []) {
             results.push(visitor(param, 'params'))
@@ -255,20 +268,20 @@ export class Docs implements DocsOptions {
             }
         }
         if (examples.length === 1) {
-            examples[0].heading = { depth, text: 'Example' + suffix }
+            examples[0].heading = { depth, text: 'Example' + suffix, slug: !isChild }
         } else if (examples.length > 1) {
             for (let i = 0; i < examples.length; i++) {
-                examples[i].heading = { depth, text: `Example ${i + 1}${suffix}` }
+                examples[i].heading = { depth, text: `Example ${i + 1}${suffix}`, slug: !isChild }
             }
         }
         return new Docs({
             summary: new DocsBlock(comment.summary),
             typeParams: {
-                heading: { depth: 5, text: 'Type Parameters' },
+                head: new DocsBlock([], { depth: 5, text: 'Type Parameters' }),
                 members: typeParams.filter((block) => !block.isEmpty),
             },
             params: {
-                heading: { depth: 5, text: 'Parameters' },
+                head: new DocsBlock([], { depth: 5, text: 'Parameters' }),
                 members: params.filter((block) => !block.isEmpty),
             },
             defaultValue: new DocsBlock(comment.getTag('@defaultValue')?.content ?? [], {
@@ -278,7 +291,7 @@ export class Docs implements DocsOptions {
             returnValue,
             remarks: new DocsBlock(
                 comment.getTag('@remarks')?.content ?? [],
-                isChild ? undefined : { depth: 2, text: 'Description' },
+                isChild ? undefined : { depth: 2, text: 'Description', slug: true },
             ),
             examples,
         })

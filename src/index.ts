@@ -13,7 +13,6 @@ import pagefind from './pagefind.js'
 import { rehypeAside, rehypeLinks } from './plugins.js'
 import previews from './previews.js'
 import type { Group, Page } from './sidebar.js'
-import { getEntryPathname } from './util.js'
 
 export interface AtlasOptions {
     name: string
@@ -27,8 +26,12 @@ export interface AtlasOptions {
         tsconfig?: string
         resolveLink?: (id: ReflectionSymbolId) => string | undefined
         entryPath?: (entryName: string, packageName: string) => string | undefined
-        releaseInfo?: (packageVersion: string, packageName: string, entryName: string) => {
-            name: string,
+        releaseInfo?: (
+            packageVersion: string,
+            packageName: string,
+            entryName: string,
+        ) => {
+            name: string
             url?: string
         }
     }
@@ -59,7 +62,7 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
             config.base + '/' + base,
             options.reference.resolveLink,
             options.reference.entryPath,
-            options.reference.releaseInfo
+            options.reference.releaseInfo,
         )
         globalThis.atlasReference = {
             pages: [],
@@ -68,11 +71,11 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
 
         for (const named of entries.map((entry) => [entry, ...entry.exports]).flat()) {
             const id = named.heading.slug
-            if (typeof id === 'string') {
+            if (typeof id === 'string' && named.href) {
                 globalThis.atlasReference.pages.push({
                     id,
                     named,
-                    href: getEntryPathname(id, config.base + '/' + base, config.build.format),
+                    href: named.href,
                 })
             }
         }

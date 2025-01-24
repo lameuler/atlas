@@ -9,12 +9,14 @@ import {
     SourceReference,
 } from 'typedoc'
 
-import { Docs, DocsBlock } from './docs.js'
+import { getEntryPathname } from '../util.js'
+import { Docs, DocsBlock, DocsHeading } from './docs.js'
 import { Excerpt } from './excerpts.js'
 
 export interface EntryPoint extends Named {
     kind: 'entry'
-    exports: Named[]
+    exports: NamedList
+    groups: ExportGroup[]
 }
 
 export interface Named {
@@ -27,6 +29,7 @@ export interface Named {
         text?: string
         code?: boolean
     }
+    href?: string
     kind: 'member' | 'export' | 'entry'
     declarations: (Declaration | ContainerDeclaration)[]
     headings: {
@@ -35,7 +38,7 @@ export interface Named {
         text: string
     }[]
     release?: {
-        name: string,
+        name: string
         url?: string
     }
 }
@@ -101,6 +104,65 @@ export class NamedList extends Array<Named> {
 
 export function isContainer(declaration: Declaration): declaration is ContainerDeclaration {
     return declaration.kind === 'Class' || declaration.kind === 'Interface'
+}
+export function isEntry(named: Named): named is EntryPoint {
+    return (
+        named.kind === 'entry' &&
+        'exports' in named &&
+        Array.isArray(named.exports) &&
+        'groups' in named &&
+        Array.isArray(named.groups)
+    )
+}
+export class ExportGroup {
+    heading: DocsHeading
+    declarations: Declaration[]
+    constructor(name: string, declarations?: Declaration[]) {
+        this.heading = {
+            depth: 5,
+            text: name + ':',
+            slug: false,
+        }
+        this.declarations = declarations ?? []
+    }
+    add(declaration: Declaration) {
+        this.declarations.push(declaration)
+    }
+    isEmpty() {
+        return this.declarations.length === 0
+    }
+}
+export function getExportGroups(exports: NamedList) {
+    const classes = new ExportGroup('Classes')
+    const interfaces = new ExportGroup('Interfaces')
+    const types = new ExportGroup('Type Aliases')
+    const functions = new ExportGroup('Functions')
+    const variables = new ExportGroup('Variables')
+    const others = new ExportGroup('Others')
+    for (const named of exports) {
+        for (const declaration of named.declarations) {
+            switch (declaration.kind) {
+                case 'Class':
+                    classes.add(declaration)
+                    break
+                case 'Interface':
+                    interfaces.add(declaration)
+                    break
+                case 'Type':
+                    types.add(declaration)
+                    break
+                case 'Function':
+                    functions.add(declaration)
+                    break
+                case 'Variable':
+                    variables.add(declaration)
+                    break
+                default:
+                    others.add(declaration)
+            }
+        }
+    }
+    return [classes, interfaces, types, functions, variables].filter((group) => !group.isEmpty())
 }
 
 class NamedMap {
@@ -228,6 +290,9 @@ class NamedMap {
         })
         return all
     }
+    forEach(callback: (named: Named) => void) {
+        this.map.forEach(callback)
+    }
 }
 
 function getSignatureDeclarations(
@@ -290,17 +355,21 @@ class EntryBuilder {
     constructor(
         private name: string,
         id: string,
+        private format: 'directory' | 'preserve' | 'file',
+        private base: string,
         private slugger: FileNameSlugger,
-        private release?: EntryPoint['release']
+        private release?: EntryPoint['release'],
     ) {
         this.entry = {
             name: this.name,
             heading: { depth: 1, slug: id },
+            href: getEntryPathname(id, base, format),
             kind: 'entry',
-            exports: [],
+            exports: new NamedList({ depth: 2, text: 'Exports' }),
+            groups: [],
             declarations: [],
             headings: [],
-            release
+            release,
         }
         this.exports = new NamedMap('export', this.entry)
     }
@@ -314,33 +383,30 @@ class EntryBuilder {
         if (this.built) {
             return this.entry
         }
-        this.exports
-            .getAll({
-                depth: 2,
-                text: 'Exports',
-            })
-            .forEach((named) => {
-                named.heading.slug = this.slugger.slug(this.entry.heading.slug + '/' + named.name)
-                const firstKind = named.declarations[0].kind
-                for (const { kind } of named.declarations.slice(1)) {
-                    if (kind !== firstKind) {
-                        for (const declaration of named.declarations) {
-                            declaration.heading.text = declaration.kind + ' Signature'
-                        }
-                        break
-                    }
-                }
-                if (named.name === 'default') {
-                    this.entry.declarations = named.declarations
+        this.exports.forEach((named) => {
+            named.heading.slug = this.slugger.slug(this.entry.heading.slug + '/' + named.name)
+            named.href = getEntryPathname(named.heading.slug, this.base, this.format)
+            const firstKind = named.declarations[0].kind
+            for (const { kind } of named.declarations.slice(1)) {
+                if (kind !== firstKind) {
                     for (const declaration of named.declarations) {
-                        declaration.parent = this.entry
+                        declaration.heading.text = declaration.kind + ' Signature'
                     }
-                } else {
-                    setAllHeadings(named)
-                    named.release = this.release
-                    this.entry.exports.push(named)
+                    break
                 }
-            })
+            }
+            if (named.name === 'default') {
+                this.entry.declarations = named.declarations
+                for (const declaration of named.declarations) {
+                    declaration.parent = this.entry
+                }
+            } else {
+                setAllHeadings(named)
+                named.release = this.release
+                this.entry.exports.push(named)
+            }
+        })
+        this.entry.groups = getExportGroups(this.entry.exports)
         setAllHeadings(this.entry)
 
         this.built = true
@@ -351,6 +417,12 @@ class EntryBuilder {
 function setAllHeadings(named: Named) {
     named.headings = []
     const headingSlugger = new Slugger()
+    if (isEntry(named)) {
+        addHeading(named, named.exports, headingSlugger)
+        for (const group of named.groups) {
+            addHeading(named, group, headingSlugger)
+        }
+    }
     for (const dec of named.declarations) {
         addHeading(named, dec, headingSlugger)
         if (isContainer(dec)) {
@@ -374,7 +446,7 @@ function setAllHeadings(named: Named) {
 
 function addHeading(
     parent: Named,
-    child: Named | NamedList | Declaration | DocsBlock | undefined,
+    child: Named | NamedList | Declaration | DocsBlock | ExportGroup | undefined,
     slugger: Slugger,
 ) {
     if (!child?.heading) return
@@ -387,12 +459,17 @@ function addHeading(
         heading.text = child.heading.text
     }
     if (heading.slug !== false) {
-        heading.slug ??= slugger.slug(heading.text)
+        if (typeof heading.slug !== 'string') {
+            heading.slug = slugger.slug(heading.text)
+        }
         parent.headings.push({
             depth: heading.depth,
             slug: heading.slug,
             text: heading.text,
         })
+        if ('name' in child && child.kind === 'member' && parent.href) {
+            child.href = parent.href + '#' + heading.slug
+        }
     }
 }
 
@@ -448,13 +525,8 @@ export class LinkResolver {
             const named = this.namedMap.get(id)
             if (!named) {
                 return undefined
-            } else if (named.kind === 'member') {
-                if (named.heading.slug && named.parent?.heading.slug) {
-                    resolved =
-                        this.resolveHref(named.parent?.heading.slug) + '#' + named.heading.slug
-                }
-            } else {
-                resolved = this.resolveHref(named.heading.slug)
+            } else if (named.href) {
+                resolved = named.href
             }
         } else if (typeof this.resolveExternal === 'function') {
             resolved = this.resolveExternal(id)
@@ -511,10 +583,14 @@ export async function getExports(
     base = '/',
     resolveLink?: (id: ReflectionSymbolId) => string | undefined,
     entryPath?: (entryName: string, packageName: string) => string | undefined,
-    releaseInfo?: (packageVersion: string, packageName: string, entryName: string) => {
-        name: string,
+    releaseInfo?: (
+        packageVersion: string,
+        packageName: string,
+        entryName: string,
+    ) => {
+        name: string
         url?: string
-    }
+    },
 ) {
     const app = await Application.bootstrap({
         entryPoints,
@@ -570,7 +646,9 @@ export async function getExports(
         }
         const path = sources[0].fullFileName
 
-        const id = entryPath?.(module.name, project.packageName) ?? slugger.slug(name === 'index' ? '' : name)
+        const id =
+            entryPath?.(module.name, project.packageName) ??
+            slugger.slug(name === 'index' ? '' : name)
 
         modules.push({ path, module, fullName, id })
     }
@@ -578,7 +656,14 @@ export async function getExports(
     const entries: EntryPoint[] = []
 
     for (const { module, fullName, id } of modules) {
-        const entryBuilder = new EntryBuilder(fullName, id, slugger, releaseInfo?.(project.packageVersion, project.packageName, module.name))
+        const entryBuilder = new EntryBuilder(
+            fullName,
+            id,
+            format,
+            base,
+            slugger,
+            releaseInfo?.(project.packageVersion, project.packageName, module.name),
+        )
 
         if (!module.children) {
             throw new Error(`module ${fullName} has no children`)
