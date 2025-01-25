@@ -1,5 +1,7 @@
 import { extname } from 'node:path'
 
+import { h } from 'hastscript'
+
 export function getEntryPathname(
     id: string,
     base: string,
@@ -38,4 +40,12 @@ export function canonicalPathname(
         return pathname + '/'
     }
     return pathname
+}
+
+export function makeIcon(paths: string[], size = 20) {
+    return h(
+        'svg.icon',
+        { viewBox: '0 0 24 24', width: size, height: size },
+        ...paths.map((d) => h('path', { d })),
+    )
 }

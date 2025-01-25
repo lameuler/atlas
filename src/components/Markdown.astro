@@ -26,11 +26,9 @@
         color: var(--accent-highlight);
     }
 
-    section :global(pre) {
+    section :global(pre:not(div > .astro-code), div:has(> .astro-code)) {
         margin: calc(var(--height) * 1em) -0.4rem;
         line-height: max(var(--height) * 1.5, 1);
-    }
-    section :global(.astro-code) {
         position: relative;
     }
     section :global(.astro-code),
@@ -49,6 +47,29 @@
         font-style: var(--shiki-dark-font-style);
         font-weight: var(--shiki-dark-font-weight);
         text-decoration: var(--shiki-dark-text-decoration);
+    }
+    section :global(.astro-code span.line > a) {
+        text-decoration-line: underline;
+        text-decoration-style: dotted;
+        text-decoration-color: var(--sub);
+        text-underline-offset: 16%;
+        text-decoration-thickness: 8%;
+    }
+    section :global(.astro-code span.line > a:hover) {
+        z-index: 10;
+        text-decoration: none;
+    }
+    section :global(.astro-code span.line > a:hover span) {
+        text-decoration-line: underline;
+        text-underline-offset: 10%;
+        text-decoration-thickness: 10%;
+    }
+    section :global(.astro-code span.line > span a) {
+        color: inherit;
+    }
+    section :global(.astro-code span.line > span a:hover) {
+        text-underline-offset: 10%;
+        text-decoration-thickness: 10%;
     }
     section :global(.astro-code button[data-copy-previous]) {
         position: absolute;

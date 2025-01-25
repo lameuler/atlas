@@ -3,8 +3,6 @@ import sitemap from '@astrojs/sitemap'
 import svelte from '@astrojs/svelte'
 import virtual from '@rollup/plugin-virtual'
 import type { AstroConfig, AstroIntegration } from 'astro'
-import { Element } from 'hast'
-import { h } from 'hastscript'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import { ReflectionSymbolId } from 'typedoc'
 
@@ -13,6 +11,8 @@ import pagefind from './pagefind.js'
 import { rehypeAside, rehypeLinks } from './plugins.js'
 import previews from './previews.js'
 import type { Group, Page } from './sidebar.js'
+import { codeAutolink, copyButton } from './transformers.js'
+import { makeIcon } from './util.js'
 
 export interface AtlasOptions {
     name: string
@@ -37,10 +37,6 @@ export interface AtlasOptions {
     }
 }
 
-const copyIcon = makeIcon([
-    'M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z',
-    'M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1',
-])
 const linkIcon = makeIcon([
     'M9 15l6 -6',
     'M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464',
@@ -122,15 +118,7 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                                 dark: 'github-dark',
                             },
                             defaultColor: false,
-                            transformers: [
-                                {
-                                    pre(node: Element) {
-                                        node.children.push(
-                                            h('button', { dataCopyPrevious: '' }, copyIcon),
-                                        )
-                                    },
-                                },
-                            ],
+                            transformers: [codeAutolink, copyButton],
                         },
                     },
                 })
@@ -171,12 +159,4 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
             },
         },
     }
-}
-
-function makeIcon(paths: string[], size = 20) {
-    return h(
-        'svg.icon',
-        { viewBox: '0 0 24 24', width: size, height: size },
-        ...paths.map((d) => h('path', { d })),
-    )
 }
