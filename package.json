@@ -1,6 +1,6 @@
 {
     "name": "@lameuler/atlas",
-    "version": "1.3.2",
+    "version": "2.0.0",
     "type": "module",
     "description": "Astro documentation theme for ler.quest",
     "files": [
