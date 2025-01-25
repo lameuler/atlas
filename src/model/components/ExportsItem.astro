@@ -1,0 +1,26 @@
+---
+import { DocsBlock } from '../docs'
+import { Named } from '../model'
+import DocsBlockInline from './DocsBlockInline.astro'
+
+interface Props {
+    block?: DocsBlock
+    parent: Named
+}
+
+const { block, parent } = Astro.props
+---
+
+<li>
+    <DocsBlockInline block={block ?? new DocsBlock([])} sep="–">
+        <b slot="heading"
+            >{
+                parent.href ? (
+                    <a href={parent.href}>{<code>{parent.name}</code>}</a>
+                ) : (
+                    <code>{parent.name}</code>
+                )
+            }</b
+        >
+    </DocsBlockInline>
+</li>
