@@ -26,6 +26,26 @@
         color: var(--accent-highlight);
     }
 
+    section :global(pre) {
+        background-color: var(--bg-pre) !important;
+        border-radius: 0.5em;
+        border: 1px solid #dae0e7;
+        overflow-x: auto;
+    }
+    :global(.dark) section :global(pre) {
+        border: 1px solid #0b0e1b;
+    }
+    section :global(pre > code) {
+        display: block;
+        padding-block: 0.8em;
+        min-width: 100%;
+        width: max-content;
+    }
+    section :global(code:not(pre code)) {
+        background-color: var(--bg-code);
+        padding: 0.1em 0.3em;
+        border-radius: 0.4em;
+    }
     section :global(pre:not(div > .astro-code), div:has(> .astro-code)) {
         margin: calc(var(--height) * 1em) -0.4rem;
         line-height: max(var(--height) * 1.5, 1);
@@ -34,20 +54,70 @@
     section :global(.astro-code),
     section :global(.astro-code span) {
         color: var(--shiki-light);
-        background-color: var(--shiki-light-bg);
         font-style: var(--shiki-light-font-style);
         font-weight: var(--shiki-light-font-weight);
         text-decoration: var(--shiki-light-text-decoration);
     }
-
     :global(.dark) section :global(.astro-code),
     :global(.dark) section :global(.astro-code span) {
         color: var(--shiki-dark);
-        background-color: var(--shiki-dark-bg);
         font-style: var(--shiki-dark-font-style);
         font-weight: var(--shiki-dark-font-weight);
         text-decoration: var(--shiki-dark-text-decoration);
     }
+    section :global(.astro-code .line) {
+        display: block;
+        position: relative;
+        padding-inline: 1em;
+    }
+
+    section :global(.astro-code .line.diff.add) {
+        background-color: #3dc1003a;
+    }
+    section :global(.astro-code .line.diff.add::before) {
+        content: '+';
+        position: absolute;
+        left: 0.25em;
+        inset-block: 0;
+        color: #36a701;
+    }
+    section :global(.astro-code .line.diff.remove) {
+        opacity: 0.7;
+        background-color: #cd00003a;
+    }
+    section :global(.astro-code .line.diff.remove::before) {
+        content: '-';
+        position: absolute;
+        left: 0.25em;
+        inset-block: 0;
+        color: #d60101;
+    }
+    section :global(.astro-code .line.highlighted) {
+        background-color: #77819a23;
+    }
+    section :global(.astro-code .line.highlighted.error) {
+        background-color: #cd00003a;
+    }
+    section :global(.astro-code .line.highlighted.warning) {
+        background-color: #bc8d003a;
+    }
+    section :global(.astro-code .highlighted-word) {
+        background-color: #838da52e;
+        margin-inline: -0.1em;
+        padding-inline: 0.1em;
+        border-radius: 0.3em;
+        box-shadow: 0 0 0 1px var(--line);
+    }
+    section :global(.astro-code.has-focused .line:not(.focused)) {
+        transition:
+            opacity 250ms ease-in-out,
+            filter 250ms ease-in-out;
+    }
+    section :global(.astro-code.has-focused:not(:hover) .line:not(.focused)) {
+        opacity: 0.7;
+        filter: blur(0.09em);
+    }
+
     section :global(.astro-code span.line > a) {
         text-decoration-line: underline;
         text-decoration-style: dotted;
@@ -267,25 +337,6 @@
         background-color: var(--bg-pre);
     }
 
-    section :global(pre) {
-        background-color: var(--bg-pre) !important;
-        padding: 0.8em 1em;
-        border-radius: 0.5em;
-        border: 1px solid #dae0e7;
-        overflow-x: auto;
-    }
-    :global(.dark) section :global(pre) {
-        border: 1px solid #0b0e1b;
-    }
-    section :global(pre span) {
-        background-color: var(--bg-pre) !important;
-    }
-    section :global(code:not(pre code)) {
-        background-color: var(--bg-code);
-        padding: 0.1em 0.3em;
-        border-radius: 0.4em;
-    }
-
     section :global(:is(h1, h2, h3, h4, h5, h6)) {
         color: var(--root-color);
     }
@@ -354,7 +405,8 @@
         let saved: string | undefined = undefined
         let timeout: number | NodeJS.Timeout = -1
         button.addEventListener('click', async () => {
-            const text = button.previousElementSibling?.textContent
+            const prev = button.previousElementSibling
+            const text = prev instanceof HTMLElement ? prev.innerText : null
             const html = (saved ??= button.innerHTML)
             if (typeof text !== 'string') return
             try {

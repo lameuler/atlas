@@ -1,7 +1,31 @@
+import {
+    transformerMetaHighlight,
+    transformerMetaWordHighlight,
+    transformerNotationDiff,
+    transformerNotationErrorLevel,
+    transformerNotationFocus,
+    transformerNotationHighlight,
+    transformerNotationWordHighlight,
+    transformerRemoveLineBreak,
+    transformerRemoveNotationEscape,
+} from '@shikijs/transformers'
 import { h } from 'hastscript'
 import { ShikiTransformer } from 'shiki'
 
 import { makeIcon } from './util.js'
+
+const matchAlgorithm = 'v3'
+export const common: ShikiTransformer[] = [
+    transformerMetaHighlight(),
+    transformerMetaWordHighlight(),
+    transformerNotationDiff({ matchAlgorithm }),
+    transformerNotationErrorLevel({ matchAlgorithm }),
+    transformerNotationFocus({ matchAlgorithm }),
+    transformerNotationHighlight({ matchAlgorithm }),
+    transformerNotationWordHighlight({ matchAlgorithm }),
+    transformerRemoveNotationEscape(),
+    transformerRemoveLineBreak(),
+]
 
 const copyIcon = makeIcon([
     'M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z',

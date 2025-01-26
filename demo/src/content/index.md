@@ -2,7 +2,7 @@
 title: Getting Started
 ---
 
-```js
+```js {1,3-5} /example/
 // astro.config.mjs
 import { defineConfig } from 'astro/config';
 import pdf from 'astro-pdf'
@@ -31,7 +31,7 @@ export default defineConfig({
                         screen: true, // use screen media type instead of print
                         waitUntil: 'networkidle0', // for Puppeteer page loading
                         navTimeout: 40_000,
-                        maxRetries: 0,
+                        maxRetries: -1, // [!code error]
                         throwOnFail: true,
                         viewport: { // Puppeteer Viewport
                             width: 800,
@@ -42,16 +42,25 @@ export default defineConfig({
                         pdf: { // Puppeteer PDFOptions
                             format: 'A4',
                             printBackground: true,
-                            timeout: 20_000
+                            timeout: 0 // [!code warning]
                         },
                         isolated: true // do not share cookies with other pages
                     },
-                    'basic-example.pdf'
+                    {                             // [!code --]
+                        path: 'basic-example.pdf' // [!code --]
+                    },                            // [!code --]
+                    'basic-example.pdf'           // [!code ++]
                 ],
                 ...,
-                fallback: (pathname) => ... // receives pathnames not specified above
+                fallback: (pathname) => ... // receives pathnames not specified above [!code highlight]
             }
         })
     ]
 });
+```
+
+```ts
+abcd // [!code --]
+abc // [!code ++]
+efg // [!code focus]
 ```

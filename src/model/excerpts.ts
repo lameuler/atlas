@@ -172,9 +172,6 @@ export class Excerpt {
                 nodes.push(span)
             }
             code.children.push(h('span.line', {}, ...nodes))
-            if (i < result.tokens.length - 2) {
-                code.children.push({ type: 'text', value: '\n' })
-            }
         }
 
         if (!result.rootStyle) {

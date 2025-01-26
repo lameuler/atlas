@@ -11,7 +11,7 @@ import pagefind from './pagefind.js'
 import { rehypeAside, rehypeLinks } from './plugins.js'
 import previews from './previews.js'
 import type { Group, Page } from './sidebar.js'
-import { codeAutolink, copyButton } from './transformers.js'
+import { codeAutolink, common, copyButton } from './transformers.js'
 import { makeIcon } from './util.js'
 
 export interface AtlasOptions {
@@ -118,7 +118,7 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                                 dark: 'github-dark',
                             },
                             defaultColor: false,
-                            transformers: [codeAutolink, copyButton],
+                            transformers: [codeAutolink, ...common, copyButton],
                         },
                     },
                 })
