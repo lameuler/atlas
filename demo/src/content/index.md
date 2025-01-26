@@ -2,13 +2,15 @@
 title: Getting Started
 ---
 
-```js {1,3-5} /example/
+```js {1,3-5} /maxRetries/
 // astro.config.mjs
 import { defineConfig } from 'astro/config';
 import pdf from 'astro-pdf'
 
 /*https://example.com*/
 // refer to https://astro.build/config. (or https://astro.build/config#)
+// (go to https://en.wikipedia.org/wiki/Special:Random(:))_(a))
+// http://localhost:1234/#[[what]]]]]
 export default defineConfig({
     integrations: [
         pdf({

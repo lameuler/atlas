@@ -42,16 +42,39 @@ export const copyButton: ShikiTransformer = {
 
 export const codeAutolink: ShikiTransformer = {
     span(hast, line, col, lineElement, token) {
+        // doesnt allow some reserved characters: '*
         const matches = token.content.matchAll(
-            /\bhttps?:\/\/[a-zA-Z0-9.-]+(:\d+)?[\w./?#@%!$&+,;=]*/g,
+            /\bhttps?:\/\/[a-zA-Z0-9.-]+(:\d+)?[\w\-.~!#$&()+,/:;=?@[\]%]*/g,
         )
         const parts: [number, number][] = []
         for (const match of matches) {
-            if (match[0].endsWith('.')) {
-                parts.push([match.index, match.index + match[0].replace(/\.+$/, '').length])
-            } else {
-                parts.push([match.index, match.index + match[0].length])
+            let len = 0,
+                round = 0,
+                square = 0
+            for (let i = 0; i < match[0].length; i++) {
+                const char = match[0][i]
+                if (char === '.' || char === ':' || char === ';') {
+                    continue
+                } else if (char === ')') {
+                    if (round === 0) {
+                        continue
+                    } else {
+                        round--
+                    }
+                } else if (char === ']') {
+                    if (square === 0) {
+                        continue
+                    } else {
+                        square--
+                    }
+                } else if (char === '(') {
+                    round++
+                } else if (char === '[') {
+                    square++
+                }
+                len = i + 1
             }
+            parts.push([match.index, match.index + len])
         }
         if (parts.length > 0) {
             hast.children = []
