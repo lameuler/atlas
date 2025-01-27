@@ -97,8 +97,13 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                     pattern: '404',
                     entrypoint: '@lameuler/atlas/pages/404.astro',
                 })
-                globalThis.atlasSidebar = options.sidebar ?? []
                 config = astroConfig
+                if (!astroConfig.site?.startsWith('https')) {
+                    config = updateConfig({
+                        site: (astroConfig.site ?? 'https://ler.quest').replace(/^http:/, 'https:')
+                    })
+                }
+                globalThis.atlasSidebar = options.sidebar ?? []
                 if (options.reference) {
                     injectRoute({
                         pattern: `${base ? base + '/' : ''}[...id]`,

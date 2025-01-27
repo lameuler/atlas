@@ -19,7 +19,7 @@ function addTrailingSlash(path: string) {
     }
 }
 const url =
-    import.meta.env.SITE +
+    (import.meta.env.SITE ?? '') +
     addTrailingSlash(import.meta.env.BASE_URL) +
     addTrailingSlash(buildConfig.assets) +
     id
