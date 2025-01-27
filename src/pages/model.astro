@@ -28,9 +28,36 @@ const { named, href } = Astro.props
 const group = getPageGroup(href)
 const prev = getPreviousPage(href)
 const next = getNextPage(href)
+
+let description = ''
+if (isEntry(named) && named.docs?.isEmpty === false) {
+    description = await named.docs.text()
+} else {
+    for (const { docs } of named.declarations) {
+        if (docs.shortSummary?.isEmpty === false) {
+            description += ' ' + (await docs.shortSummary.text())
+        }
+    }
+}
+description = description.trim()
+if (description.length > 155) {
+    for (let i = 155; i < description.length; i++) {
+        const char = description[i]
+        if (
+            (char >= 'a' && char <= 'z') ||
+            (char >= 'A' && char <= 'Z') ||
+            (char >= '0' && char <= '9')
+        ) {
+            continue
+        } else {
+            description = description.substring(0, i) + '…'
+            break
+        }
+    }
+}
 ---
 
-<PageLayout title={named.name} {href} headings={named.headings} {group} {prev} {next}>
+<PageLayout title={named.name} {description} {href} headings={named.headings} {group} {prev} {next}>
     {
         named.release && (
             <span slot="subtitle">

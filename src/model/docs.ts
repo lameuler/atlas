@@ -8,7 +8,7 @@ import {
     makeRecursiveVisitor,
 } from 'typedoc'
 
-import { getInlineProcessor, getProcessor } from './markdown.js'
+import { getInlineProcessor, getProcessor, getTextProcessor } from './markdown.js'
 import { LinkResolver } from './model.js'
 
 class DocsReference {
@@ -88,6 +88,10 @@ export class DocsBlock {
     async render(inline = false) {
         const processor = inline ? await getInlineProcessor() : await getProcessor()
         return (await processor.process(this.content)).toString()
+    }
+    async text() {
+        const processor = await getTextProcessor()
+        return (await processor.process(this.content)).toString().replaceAll(/\n+/g, ' ')
     }
     copyContent(heading?: DocsHeading) {
         const block = new DocsBlock([], heading)

@@ -100,7 +100,7 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
                 config = astroConfig
                 if (!astroConfig.site?.startsWith('https')) {
                     config = updateConfig({
-                        site: (astroConfig.site ?? 'https://ler.quest').replace(/^http:/, 'https:')
+                        site: (astroConfig.site ?? 'https://ler.quest').replace(/^http:/, 'https:'),
                     })
                 }
                 globalThis.atlasSidebar = options.sidebar ?? []
