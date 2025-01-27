@@ -1,5 +1,6 @@
 ---
 title: Getting Started
+description: astro-pdf is an Astro integration to generate PDFs from pages on your site, or any other websites. Find out more about how to install and configure astro-pdf.
 ---
 
 ```js {1,3-5} /maxRetries/
