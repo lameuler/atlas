@@ -41,7 +41,7 @@ async function createBaseProcessor() {
 
 async function createProcessor() {
     const processor = await createBaseProcessor()
-    processor.use(rehypeShiki, globalThis.atlasAstroMarkdownOptions?.shikiConfig)
+    processor.use(rehypeShiki, globalThis.atlasAstroMarkdownOptions?.shikiConfig ?? {})
     return processor.use(rehypeStringify)
 }
 
