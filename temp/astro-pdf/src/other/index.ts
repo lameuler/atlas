@@ -54,3 +54,105 @@ export class Cls extends AbsCls implements Itf {
 }
 
 export class P<T> extends Promise<T> {}
+
+/**
+ * @interface
+ */
+export type OBJ = {
+    name?: string
+    /**
+     * @interface
+     */
+    readonly extras?: {
+        getNum(): number
+        /**
+         * Get a number
+         * @param n seed to use
+         */
+        getNum(n: number): number
+        num?: number | (() => number)
+        getNum2: {
+            (): number
+            (n: number): number
+        }
+        /**
+         *
+         */
+        optionalGetNum?: {
+            (): number
+            (n: number): number
+        }
+        x?: () => {
+            /** the current time */
+            time: number
+            /** a nice name */
+            name: string
+        }
+        /**
+         * Even more extra options!!
+         *
+         *
+         * @example
+         * ```ts
+         * {
+         *     extras: {
+         *         more: {
+         *             thisOtherThing: 'this is super important'
+         *         }
+         *     }
+         * }
+         * ```
+         * @interface
+         */
+        more: {
+            /**
+             * This other thing that you need to provide
+             *
+             * https://example.com
+             *
+             * {@link https://example.com example site}
+             *
+             * @remarks
+             * Can basically be anything
+             *
+             */
+            thisOtherThing: string
+        }
+        // (): string
+        // new (): string
+        // [a: number]: unknown
+    }
+}
+
+const obj: OBJ = {
+    extras: {
+        more: {
+            thisOtherThing: '',
+        },
+        getNum() {
+            return 0
+        },
+        getNum2(n?: number) {
+            return n || 0
+        },
+    },
+}
+void obj
+
+export interface OBJExtras {
+    getNum(): number
+    getNum(n: number): number
+    num?: number | (() => number)
+    getNum2: {
+        (): number
+        (n: number): number
+    }
+    optionalGetNum?: {
+        (): number
+        (n: number): number
+    }
+    (): string
+    new (): string
+    [a: number]: unknown
+    id: { [a: number]: string }
+}

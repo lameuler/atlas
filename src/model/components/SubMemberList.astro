@@ -2,7 +2,6 @@
 import { isContainer, NamedList } from '../model'
 import Heading from './Heading.astro'
 import DeclarationSection from './DeclarationSection.astro'
-import SubMemberList from './SubMemberList.astro'
 
 interface Props {
     list: NamedList
@@ -14,16 +13,13 @@ const { list } = Astro.props
 {
     list.length > 0 && (
         <>
-            <Heading {...list.heading} />
             {list.map((member) => (
                 <>
                     <Heading {...member.heading} />
                     {member.declarations.map((declaration) => (
                         <>
                             <DeclarationSection {declaration} />
-                            {isContainer(declaration) && (
-                                <SubMemberList list={declaration.members} />
-                            )}
+                            {isContainer(declaration) && <Astro.self list={declaration.members} />}
                         </>
                     ))}
                 </>

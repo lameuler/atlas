@@ -3,7 +3,10 @@ import { h } from 'hastscript'
 import rehypeStringify from 'rehype-stringify'
 import { codeToTokens } from 'shiki'
 import {
+    Comment,
+    CommentDisplayPart,
     DeclarationReflection,
+    Reflection,
     ReflectionFlags,
     ReflectionKind,
     ReflectionSymbolId,
@@ -21,6 +24,8 @@ import { LinkResolver } from './model.js'
 interface ExcerptOptions {
     space?: number | string | false
     indent?: number
+    comments?: boolean
+    collapse?: boolean
 }
 
 type ExcerptPart = string | ExcerptReference
@@ -28,10 +33,15 @@ type ExcerptPart = string | ExcerptReference
 class ExcerptReference {
     constructor(
         public content: string,
-        public id: number | ReflectionSymbolId,
+        public id: number | ReflectionSymbolId | string,
     ) {}
     toString() {
         return this.content
+    }
+    split(separator: string | RegExp, limit?: number) {
+        return this.content
+            .split(separator, limit)
+            .map((segment) => new ExcerptReference(segment, this.id))
     }
 }
 
@@ -581,7 +591,12 @@ const typeVisitor: TypeVisitor<ExcerptPart[], [TypeContext, ExcerptOptions]> = {
         }
         if (type.declaration.children && type.declaration.children.length > 0) {
             for (const child of type.declaration.children) {
-                // parts.push('/* ', ReflectionKind.singularString(child.kind), ' ', child.escapedName+'', ' */', sep)
+                // TODO consider if tsdoc comments should be shown for reflections
+                if (options.comments && child.comment) {
+                    parts.push('/**', sep, ' * ')
+                    parts.push(commentParts(child.comment, sep + ' * '))
+                    parts.push(sep, ' */', sep)
+                }
                 if (child.kind === ReflectionKind.Property) {
                     parts.push(propertyParts(child, indented), sep)
                 } else {
@@ -599,6 +614,9 @@ const typeVisitor: TypeVisitor<ExcerptPart[], [TypeContext, ExcerptOptions]> = {
             )
         } else if (parts.length === 1) {
             return wrap(type, context, ['{}'])
+        }
+        if (options.collapse) {
+            return wrap(type, context, ['{ /*...*/ }'])
         }
         if (parts.length > 2) {
             parts.pop()
@@ -659,6 +677,7 @@ const typeVisitor: TypeVisitor<ExcerptPart[], [TypeContext, ExcerptOptions]> = {
         ])
     },
     union: function (type, context, options) {
+        // TODO change order of members
         const parts: (ExcerptPart | ExcerptPart[])[] = [
             type.types[0].visit(typeVisitor, TypeContext.unionElement, options),
         ]
@@ -877,4 +896,60 @@ function indentPart(options: ExcerptOptions) {
     } else {
         return ''
     }
+}
+
+function commentParts(comment: Comment, linePrefix: ExcerptPart | ExcerptPart[]) {
+    const parts = commentContentParts(comment.summary)
+    for (const block of comment.blockTags) {
+        if (parts.length > 0) parts.push('\n\n')
+        parts.push(block.tag, '\n', ...commentContentParts(block.content))
+    }
+    const modifiers = Array.from(comment.modifierTags).join(' ')
+    if (modifiers) {
+        if (parts.length > 0) parts.push('\n\n')
+        parts.push(modifiers)
+    }
+    return replaceLineBreaks(parts, linePrefix)
+}
+
+function commentContentParts(content: CommentDisplayPart[]) {
+    const parts: ExcerptPart[] = []
+    for (const part of content) {
+        if (part.kind === 'inline-tag') {
+            if (part.tag === '@link') {
+                const target = part.target
+                if (target instanceof Reflection) {
+                    parts.push(new ExcerptReference(part.text, target.id))
+                } else if (
+                    target instanceof ReflectionSymbolId ||
+                    (typeof target === 'string' && target.startsWith('https://'))
+                ) {
+                    parts.push(new ExcerptReference(part.text, target))
+                } else {
+                    parts.push(part.text)
+                }
+            } else {
+                parts.push(`{${part.tag} ${part.text}}`)
+            }
+        } else {
+            parts.push(part.text)
+        }
+    }
+    return parts
+}
+
+function replaceLineBreaks(parts: ExcerptPart[], replacement: ExcerptPart | ExcerptPart[]) {
+    const sep = Array.isArray(replacement) ? replacement : [replacement]
+    const result: ExcerptPart[] = []
+    for (const part of parts) {
+        const [first, ...rest] = part.split('\n')
+        if (first.toString()) result.push(first)
+        for (const subpart of rest) {
+            result.push(...sep)
+            if (subpart.toString()) {
+                result.push(subpart)
+            }
+        }
+    }
+    return result
 }

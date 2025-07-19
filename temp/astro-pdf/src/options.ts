@@ -8,6 +8,7 @@ import type {
     PDFOptions as PuppeteerPDFOptions,
     Viewport,
 } from 'puppeteer'
+import { z } from 'zod'
 
 import type { ServerOutput } from './server.js'
 
@@ -461,3 +462,71 @@ export function defaultPathFunction(path: string) {
         return path.replace('[pathname]', pathname)
     }
 }
+
+/**
+ *
+ */
+const schema = z.object({
+    /**
+     * The base path to use
+     *
+     * @remarks
+     * If no base path is provided, the current working directory will be used.
+     */
+    base: z.string().or(z.null()),
+    /**
+     * The maximum number of pages to process concurrently
+     *
+     * @defaultValue `'auto'`
+     */
+    concurrent: z.union([z.number().nonnegative(), z.literal('auto')]).optional(),
+    /**
+     * **Experimental options**
+     *
+     * > [!CAUTION] Experimental
+     * > These options and their behaviour may change in any update.
+     *
+     * @interface
+     */
+    experimental: z
+        .object({
+            /**
+             * @beta @sealed
+             *
+             * Whenever `astro-pdf` generates a PDF, it will spin a coin!
+             *
+             * @remarks
+             * If the coin lands on heads, it will proceed as normal, but it lands on tails, the PDF will be deleted.
+             *
+             * > [!NOTE]
+             * > still not sure what the use case for this feature would be...
+             *
+             * @defaultValue `false`
+             */
+            coinFlip: z.boolean().optional(),
+            /**
+             * Set a custom coin for {@link NewOptions.experimental `coinFlip`}
+             *
+             * @returns `true` if heads and `false` if tails
+             *
+             * @experimental
+             */
+            coin: z.function(z.tuple([]), z.boolean()).optional(),
+        })
+        .optional(),
+})
+
+void schema
+
+/**
+ * @interface
+ *
+ * @public
+ */
+export type NewOptions = z.infer<typeof schema>
+
+const n: NewOptions = {
+    base: null,
+}
+
+n.concurrent = 'auto'

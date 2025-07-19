@@ -447,5 +447,5 @@ export default function pdf(options: Options): AstroIntegration {
 }
 
 export type { Options, PageOptions }
-export type { PagesEntry, PagesFunction, PagesMap, PDFOptions } from './options.js'
+export type { PagesEntry, PagesFunction, PagesMap, PDFOptions, NewOptions } from './options.js'
 export type { ServerOutput } from './server.js'

@@ -188,11 +188,12 @@ function getInheritedFrom(reflection: DeclarationReflection | SignatureReflectio
 }
 
 class NamedMap {
-    private map = new Map<string | symbol, Named>()
+    private readonly map = new Map<string | symbol, Named>()
 
     constructor(
-        private kind: Named['kind'],
-        private parent: Named,
+        readonly kind: Named['kind'],
+        readonly parent: Named,
+        readonly depth: number = 1,
     ) {}
 
     get(name: string, id: number): Named {
@@ -206,21 +207,19 @@ class NamedMap {
                 parent: this.parent,
                 kind: this.kind,
                 declarations: [],
-                heading:
-                    this.kind === 'member'
-                        ? {
-                              depth: 3,
-                              code: true,
-                          }
-                        : { depth: 1 },
+                heading: { depth: 3, code: true },
                 headings: [],
+            }
+            if (this.depth < 1) {
+                named.heading = { depth: 1 }
+            } else if (this.depth > 1) {
+                named.heading = { depth: 4, code: true }
             }
             this.map.set(name, named)
             return named
         }
     }
-    // TODO allow expanding the type of a property if it is a reference type
-    addDeclaration(ref: DeclarationReflection | SignatureReflection, isChild = true) {
+    addDeclaration(ref: DeclarationReflection | SignatureReflection) {
         const decRef = ref instanceof SignatureReflection ? ref.parent : ref
         const kind = getDeclarationKind(decRef.kind)
         if (!kind) return
@@ -228,18 +227,20 @@ class NamedMap {
             return
         }
 
-        const named = this.get(ref.name, decRef.id)
+        const name = this.depth > 1 ? this.parent.name + '.' + ref.name : ref.name
+        const named = this.get(name, decRef.id)
         const declaration: Declaration = {
             parent: named,
             id: ref.id,
-            heading: isChild
-                ? { depth: 5, slug: false, text: 'Signature:' }
-                : { depth: 2, text: 'Signature' },
+            heading: { depth: 5, slug: false, text: 'Signature:' },
             kind,
             excerpt: Excerpt.of(ref),
             docs: Docs.of(ref, named.kind === 'member'),
             source: ref.sources?.[Math.min(named.declarations.length, ref.sources.length - 1)],
             inheritedFrom: getInheritedFrom(ref),
+        }
+        if (this.depth === 0) {
+            declaration.heading = { depth: 2, text: 'Signature' }
         }
 
         if (ref.isDeclaration() && (kind === 'Class' || kind === 'Interface')) {
@@ -308,10 +309,51 @@ class NamedMap {
             }
             named.declarations.push(container)
             return container
-        } else {
-            named.declarations.push(declaration)
-            return declaration
         }
+        if (
+            ref.isDeclaration() &&
+            kind === 'Property' &&
+            ref.type?.type === 'reflection' &&
+            ref.comment?.hasModifier('@interface')
+        ) {
+            const children = ref.type.declaration.children
+            if (
+                children &&
+                children.length > 0 &&
+                ref.type.declaration.getAllSignatures().length === 0
+            ) {
+                let hasConstructor = false
+                const members = new NamedMap('member', named, this.depth + 1)
+                for (const child of children) {
+                    const signatures = child.getAllSignatures()
+                    if (signatures.length > 0) {
+                        for (const signature of signatures) {
+                            if (signature.kind === ReflectionKind.ConstructorSignature) {
+                                hasConstructor = true
+                                break
+                            }
+                            members.addDeclaration(signature)
+                        }
+                    } else {
+                        members.addDeclaration(child)
+                    }
+                }
+                if (!hasConstructor) {
+                    const container: ContainerDeclaration = {
+                        ...declaration,
+                        excerpt: Excerpt.ofProperty(ref, { collapse: true }),
+                        kind: 'Interface',
+                        members: members.getAll({ depth: 2, text: 'Members' }),
+                        staticMembers: new NamedList({ depth: 2, text: 'Static Members' }),
+                    }
+                    named.declarations.push(container)
+                    return container
+                }
+            }
+        }
+
+        named.declarations.push(declaration)
+        return declaration
     }
     getAll(heading: { depth: number; slug?: string | false; text: string }) {
         const all = new NamedList(heading)
@@ -410,12 +452,11 @@ class EntryBuilder {
             headings: [],
             release,
         }
-        this.exports = new NamedMap('export', this.entry)
+        this.exports = new NamedMap('export', this.entry, 0)
     }
 
     addDeclaration(ref: DeclarationReflection | SignatureReflection) {
-        const declaration = this.exports.addDeclaration(ref, false)
-        return declaration
+        return this.exports.addDeclaration(ref)
     }
 
     build(reflection: DeclarationReflection): EntryPoint {
@@ -478,12 +519,19 @@ function setAllHeadings(named: Named) {
         dec.docs?.visitBlocks((block) => addHeading(named, block, headingSlugger))
         if (isContainer(dec)) {
             addHeading(named, dec.staticMembers, headingSlugger)
-            for (const member of dec.staticMembers) {
-                addHeading(named, member, headingSlugger)
-            }
+            setMemberHeadings(named, dec.staticMembers, headingSlugger)
             addHeading(named, dec.members, headingSlugger)
-            for (const member of dec.members) {
-                addHeading(named, member, headingSlugger)
+            setMemberHeadings(named, dec.members, headingSlugger)
+        }
+    }
+}
+
+function setMemberHeadings(parent: Named, members: NamedList, slugger: Slugger) {
+    for (const member of members) {
+        addHeading(parent, member, slugger)
+        for (const dec of member.declarations) {
+            if (isContainer(dec)) {
+                setMemberHeadings(parent, dec.members, slugger)
             }
         }
     }
