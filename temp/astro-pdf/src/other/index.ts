@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 
-export type Other = string | false
+export type Other = string | false | unknown | undefined | Promise<void>
 
 export default 'Other'
 

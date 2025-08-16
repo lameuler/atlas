@@ -401,6 +401,26 @@ const arrowFunctionType = {
     },
 }
 
+function getTypePriority(type: SomeType) {
+    switch (type.type) {
+        case 'literal': {
+            if (type.value === null) {
+                return -4
+            }
+            return -1
+        }
+        case 'intrinsic': {
+            console.log(type.name)
+            if (type.name === 'undefined' || type.name === 'void') {
+                return -5
+            }
+            return -2
+        }
+        case 'unknown': return -3
+    }
+    return 0
+}
+
 const typeVisitor: TypeVisitor<ExcerptPart[], [TypeContext, ExcerptOptions]> = {
     array: function (type, context, options) {
         const parts = [type.elementType.visit(typeVisitor, TypeContext.arrayElement, options), '[]']
@@ -677,12 +697,13 @@ const typeVisitor: TypeVisitor<ExcerptPart[], [TypeContext, ExcerptOptions]> = {
         ])
     },
     union: function (type, context, options) {
-        // TODO change order of members
+        const members = [...type.types]
+        members.sort((a, b) => getTypePriority(b) - getTypePriority(a))
         const parts: (ExcerptPart | ExcerptPart[])[] = [
-            type.types[0].visit(typeVisitor, TypeContext.unionElement, options),
+            members[0].visit(typeVisitor, TypeContext.unionElement, options),
         ]
-        for (let i = 1; i < type.types.length; i++) {
-            parts.push(' | ', type.types[i].visit(typeVisitor, TypeContext.unionElement, options))
+        for (let i = 1; i < members.length; i++) {
+            parts.push(' | ', members[i].visit(typeVisitor, TypeContext.unionElement, options))
         }
         return wrap(type, context, parts)
     },
