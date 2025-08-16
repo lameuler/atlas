@@ -10,6 +10,7 @@ import {
 
 import { getInlineProcessor, getProcessor, getTextProcessor } from './markdown.js'
 import { LinkResolver } from './model.js'
+import { use } from './comment.js'
 
 class DocsReference {
     #text: string
@@ -45,7 +46,7 @@ export class DocsBlock {
     #parts: (string | DocsReference)[] = []
 
     constructor(
-        parts: readonly CommentDisplayPart[],
+        readonly parts: readonly CommentDisplayPart[],
         public heading?: DocsHeading,
     ) {
         for (const part of parts) {
@@ -201,7 +202,7 @@ export class Docs implements DocsOptions {
     }
 
     static of(reflection: DeclarationReflection | SignatureReflection, isChild: boolean): Docs {
-        const comment = reflection.comment
+        const comment = use(reflection.comment)
         if (!comment) {
             return new Docs({})
         }
@@ -240,7 +241,7 @@ export class Docs implements DocsOptions {
         }
         for (const typeParam of reflection.typeParameters ?? []) {
             typeParams.push(
-                new DocsBlock(typeParam.comment?.summary ?? [], {
+                new DocsBlock(use(typeParam.comment)?.summary ?? [], {
                     depth: 5,
                     text: typeParam.name,
                     code: true,
@@ -261,7 +262,7 @@ export class Docs implements DocsOptions {
         if (reflection instanceof SignatureReflection) {
             for (const param of reflection.parameters ?? []) {
                 params.push(
-                    new DocsBlock(param.comment?.summary ?? [], {
+                    new DocsBlock(use(param.comment)?.summary ?? [], {
                         depth: 5,
                         text: param.name,
                         code: true,
@@ -272,12 +273,12 @@ export class Docs implements DocsOptions {
             reflection.type.visit(
                 makeRecursiveVisitor({
                     reflection(type) {
-                        if (type.declaration.getAllSignatures().length !== 1) return
-
-                        for (const signature of type.declaration.getAllSignatures()) {
+                        const signatures = type.declaration.getAllSignatures()
+                        if (signatures.length === 1 && (type.declaration.children?.length ?? 0) === 0) {
+                            const signature = signatures[0]
                             for (const typeParam of signature.typeParameters ?? []) {
                                 typeParams.push(
-                                    new DocsBlock(typeParam.comment?.summary ?? [], {
+                                    new DocsBlock(use(typeParam.comment)?.summary ?? [], {
                                         depth: 5,
                                         text: typeParam.name,
                                         code: true,
@@ -286,16 +287,16 @@ export class Docs implements DocsOptions {
                             }
                             for (const param of signature.parameters ?? []) {
                                 params.push(
-                                    new DocsBlock(param.comment?.summary ?? [], {
+                                    new DocsBlock(use(param.comment)?.summary ?? [], {
                                         depth: 5,
                                         text: param.name,
                                         code: true,
                                     }),
                                 )
                             }
-                            if (signature.comment && returnValue.isEmpty) {
+                            if (returnValue.isEmpty) {
                                 returnValue = new DocsBlock(
-                                    signature.comment.getTag('@returns')?.content ?? [],
+                                    use(signature.comment)?.getTag('@returns')?.content ?? [],
                                     { depth: 5, text: 'Returns:' },
                                 )
                             }

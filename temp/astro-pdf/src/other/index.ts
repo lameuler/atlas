@@ -145,7 +145,10 @@ export interface OBJExtras {
     num?: number | (() => number)
     getNum2: {
         (): number
-        (n: number): number
+        /**
+         * @returns the string representation
+         */
+        (n: number): string
     }
     optionalGetNum?: {
         (): number
@@ -154,5 +157,36 @@ export interface OBJExtras {
     (): string
     new (): string
     [a: number]: unknown
-    id: { [a: number]: string }
+    /**
+     * hey
+     */
+    id: { 
+        [a: number]: string
+    }
+    /**
+     * creates something(?)
+     * @param n - your favourite number
+     * @returns we're actually not sure, we've never tried...
+     */
+    alt: {
+        new (n: number): unknown
+        // new (n: string): [unknown]
+    }
+    a: {
+        /**
+         * hey
+         * @returns wtf
+         */
+        b: {
+            /**
+             * hey there!!
+             * @returns nothing much
+             */
+            new (): Promise<Promise<OBJ>>
+        }
+    }
+    /**
+     * @param x something important
+     */
+    fn(x: unknown): boolean
 }

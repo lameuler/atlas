@@ -194,6 +194,7 @@ class NamedMap {
         readonly kind: Named['kind'],
         readonly parent: Named,
         readonly depth: number = 1,
+        readonly options: { comments?: boolean } = {}
     ) {}
 
     get(name: string, id: number): Named {
@@ -234,7 +235,7 @@ class NamedMap {
             id: ref.id,
             heading: { depth: 5, slug: false, text: 'Signature:' },
             kind,
-            excerpt: Excerpt.of(ref),
+            excerpt: Excerpt.of(ref, { comments: this.options.comments, space: 4 }),
             docs: Docs.of(ref, named.kind === 'member'),
             source: ref.sources?.[Math.min(named.declarations.length, ref.sources.length - 1)],
             inheritedFrom: getInheritedFrom(ref),
@@ -244,8 +245,8 @@ class NamedMap {
         }
 
         if (ref.isDeclaration() && (kind === 'Class' || kind === 'Interface')) {
-            const members = new NamedMap('member', named)
-            const staticMembers = new NamedMap('member', named)
+            const members = new NamedMap('member', named, undefined, this.options)
+            const staticMembers = new NamedMap('member', named, undefined, this.options)
             const constructors: Named = {
                 name: 'Constructors',
                 parent: named,
@@ -267,7 +268,7 @@ class NamedMap {
                                 id: signature.id,
                                 heading: { depth: 5, slug: false, text: 'Signature:' },
                                 kind: 'Constructor',
-                                excerpt: Excerpt.of(signature),
+                                excerpt: Excerpt.of(signature, { comments: this.options.comments, space: 4 }),
                                 docs: Docs.of(signature, true),
                                 source: signature.sources?.[0],
                                 inheritedFrom: getInheritedFrom(signature),
@@ -297,6 +298,7 @@ class NamedMap {
                 ref.id,
                 'Call Signatures',
                 'Call',
+                this.options
             )
             const container: ContainerDeclaration = {
                 ...declaration,
@@ -323,7 +325,7 @@ class NamedMap {
                 ref.type.declaration.getAllSignatures().length === 0
             ) {
                 let hasConstructor = false
-                const members = new NamedMap('member', named, this.depth + 1)
+                const members = new NamedMap('member', named, this.depth + 1, this.options)
                 for (const child of children) {
                     const signatures = child.getAllSignatures()
                     if (signatures.length > 0) {
@@ -341,7 +343,7 @@ class NamedMap {
                 if (!hasConstructor) {
                     const container: ContainerDeclaration = {
                         ...declaration,
-                        excerpt: Excerpt.ofProperty(ref, { collapse: true }),
+                        excerpt: Excerpt.ofProperty(ref, { collapse: true, comments: this.options.comments }),
                         kind: 'Interface',
                         members: members.getAll({ depth: 2, text: 'Members' }),
                         staticMembers: new NamedList({ depth: 2, text: 'Static Members' }),
@@ -375,6 +377,7 @@ function getSignatureDeclarations(
     id: number,
     name: string,
     kind: Omit<DeclarationKind, 'Class' | 'Interface'>,
+    options: { comments?: boolean } = {}
 ): Named | undefined {
     if (signatures && signatures.length > 0) {
         const declarations: Declaration[] = []
@@ -387,7 +390,7 @@ function getSignatureDeclarations(
                 id: signature.id,
                 heading: { depth: 5, slug: false, text: 'Signature:' },
                 kind,
-                excerpt: Excerpt.of(signature),
+                excerpt: Excerpt.of(signature, { space: 4, ...options }),
                 docs: Docs.of(signature, true),
                 source: signature.sources?.[0],
                 inheritedFrom: getInheritedFrom(signature),
@@ -438,6 +441,7 @@ class EntryBuilder {
         id: string,
         private format: 'directory' | 'preserve' | 'file',
         private base: string,
+        excerptComments: boolean | undefined,
         private slugger: FileNameSlugger,
         private release?: EntryPoint['release'],
     ) {
@@ -452,7 +456,7 @@ class EntryBuilder {
             headings: [],
             release,
         }
-        this.exports = new NamedMap('export', this.entry, 0)
+        this.exports = new NamedMap('export', this.entry, 0, { comments: excerptComments })
     }
 
     addDeclaration(ref: DeclarationReflection | SignatureReflection) {
@@ -660,6 +664,7 @@ export async function getExports(
     tsconfig?: string,
     format: 'directory' | 'preserve' | 'file' = 'directory',
     base = '/',
+    excerptComments = true,
     resolveLink?: (id: ReflectionSymbolId) => string | undefined,
     entryPath?: (entryName: string, packageName: string) => string | undefined,
     releaseInfo?: (
@@ -740,6 +745,7 @@ export async function getExports(
             id,
             format,
             base,
+            excerptComments,
             slugger,
             releaseInfo?.(project.packageVersion, project.packageName, module.name),
         )

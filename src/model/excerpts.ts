@@ -3,7 +3,6 @@ import { h } from 'hastscript'
 import rehypeStringify from 'rehype-stringify'
 import { codeToTokens } from 'shiki'
 import {
-    Comment,
     CommentDisplayPart,
     DeclarationReflection,
     Reflection,
@@ -20,12 +19,14 @@ import {
 import { unified } from 'unified'
 
 import { LinkResolver } from './model.js'
+import { Docs, DocsBlock } from './docs.js'
+import { unused } from './comment.js'
 
 interface ExcerptOptions {
-    space?: number | string | false
-    indent?: number
-    comments?: boolean
-    collapse?: boolean
+    readonly space?: number | string | false
+    readonly indent?: number
+    readonly comments?: boolean
+    readonly collapse?: boolean
 }
 
 type ExcerptPart = string | ExcerptReference
@@ -53,21 +54,13 @@ export class Excerpt {
         ref: string | number | ReflectionSymbolId | undefined
     }[] = []
     #kind?: 'normal' | 'type' | 'member'
+    #partsResolver: () => (ExcerptPart | ExcerptPart[])[]
 
     private constructor(
-        parts: (ExcerptPart | ExcerptPart[])[],
+        partsResolver: (() => (ExcerptPart | ExcerptPart[])[]),
         kind?: 'normal' | 'type' | 'member',
     ) {
-        for (const part of parts.flat()) {
-            if (part instanceof ExcerptReference) {
-                this.#references.push({
-                    start: this.#content.length,
-                    end: this.#content.length + part.content.length,
-                    ref: part.id,
-                })
-            }
-            this.#content += part
-        }
+        this.#partsResolver = partsResolver
         this.#kind = kind
     }
 
@@ -91,15 +84,32 @@ export class Excerpt {
         return this.#kind
     }
 
-    resolve(resolver: LinkResolver) {
-        for (const reference of this.#references) {
-            if (typeof reference.ref === 'number' || reference.ref instanceof ReflectionSymbolId) {
-                reference.ref = resolver.resolve(reference.ref)
+    resolve(linkResolver?: LinkResolver) {
+        this.#references = []
+        for (const part of this.#partsResolver().flat()) {
+            if (part instanceof ExcerptReference) {
+                this.#references.push({
+                    start: this.#content.length,
+                    end: this.#content.length + part.content.length,
+                    ref: part.id,
+                })
+            }
+            this.#content += part
+        }
+        if (linkResolver) {
+            for (const reference of this.#references) {
+                if (typeof reference.ref === 'number' || reference.ref instanceof ReflectionSymbolId) {
+                    reference.ref = linkResolver.resolve(reference.ref)
+                }
             }
         }
+        return this
     }
 
     async render() {
+        if (this.content.length === 0) {
+            return ''
+        }
         let prefixLine = ''
         let suffixLine = ''
 
@@ -214,7 +224,7 @@ export class Excerpt {
 
     static of(
         reflection: DeclarationReflection | SignatureReflection,
-        options: ExcerptOptions = { space: 4 },
+        options: ExcerptOptions,
     ) {
         switch (reflection.kind) {
             case ReflectionKind.Class:
@@ -240,12 +250,12 @@ export class Excerpt {
                 case ReflectionKind.Interface:
                     if (reflection.kind === ReflectionKind.CallSignature) {
                         return new Excerpt(
-                            [indentPart(options), callSignatureParts(reflection, options, ': ')],
+                            () => [indentPart(options), callSignatureParts(reflection, options, ': ')],
                             'member',
                         )
                     } else if (reflection.kind === ReflectionKind.IndexSignature) {
                         return new Excerpt(
-                            [indentPart(options), indexSignatureParts(reflection, options)],
+                            () => [indentPart(options), indexSignatureParts(reflection, options)],
                             'member',
                         )
                     }
@@ -260,110 +270,120 @@ export class Excerpt {
     }
 
     static ofType(type: Type, options: ExcerptOptions = {}) {
-        return new Excerpt(type.visit(typeVisitor, TypeContext.none, options), 'type')
+        return new Excerpt(() => type.visit(typeVisitor, TypeContext.none, options), 'type')
     }
 
     static ofMemberSignature(signature: SignatureReflection, options: ExcerptOptions = {}) {
         return new Excerpt(
-            [indentPart(options), memberSignatureParts(signature, options)],
+            () => [indentPart(options), memberSignatureParts(signature, options)],
             'member',
         )
     }
 
     static ofProperty(declaration: DeclarationReflection, options: ExcerptOptions = {}) {
-        return new Excerpt([indentPart(options), propertyParts(declaration, options)], 'member')
+        return new Excerpt(() => [indentPart(options), propertyParts(declaration, options)], 'member')
     }
 
     static ofClass(declaration: DeclarationReflection, options: ExcerptOptions = {}) {
-        const parts: ExcerptPart[] = [indentPart(options), 'export ']
-        if (declaration.flags.isAbstract) {
-            parts.push('abstract ')
-        }
-        if (declaration.name === 'default') {
-            parts.push('default class ')
-        } else {
-            parts.push('class ', declaration.name)
-        }
-        parts.push(...typeParameterParts(declaration.typeParameters, options))
-        if (parts[parts.length - 1].toString().endsWith(' ')) {
-            parts.push(' ')
-        }
-        parts.push(...typeListParts(declaration.extendedTypes, options, 'extends'))
-        parts.push(...typeListParts(declaration.implementedTypes, options, 'implements'))
-        return new Excerpt(parts)
+        return new Excerpt(() => {
+            const parts: ExcerptPart[] = [indentPart(options), 'export ']
+            if (declaration.flags.isAbstract) {
+                parts.push('abstract ')
+            }
+            if (declaration.name === 'default') {
+                parts.push('default class ')
+            } else {
+                parts.push('class ', declaration.name)
+            }
+            parts.push(...typeParameterParts(declaration.typeParameters, options))
+            if (parts[parts.length - 1].toString().endsWith(' ')) {
+                parts.push(' ')
+            }
+            parts.push(...typeListParts(declaration.extendedTypes, options, 'extends'))
+            parts.push(...typeListParts(declaration.implementedTypes, options, 'implements'))
+            return parts
+        })
     }
 
     static ofInterface(declaration: DeclarationReflection, options: ExcerptOptions = {}) {
-        const parts: ExcerptPart[] = [indentPart(options), 'export ']
-        if (declaration.name === 'default') {
-            parts.push('default interface ')
-        } else {
-            parts.push('interface ', declaration.name)
-        }
-        parts.push(...typeParameterParts(declaration.typeParameters, options))
-        if (parts[parts.length - 1].toString().endsWith(' ')) {
-            parts.push(' ')
-        }
-        parts.push(...typeListParts(declaration.extendedTypes, options, 'extends'))
-        return new Excerpt(parts)
+        return new Excerpt(() => {
+            const parts: ExcerptPart[] = [indentPart(options), 'export ']
+            if (declaration.name === 'default') {
+                parts.push('default interface ')
+            } else {
+                parts.push('interface ', declaration.name)
+            }
+            parts.push(...typeParameterParts(declaration.typeParameters, options))
+            if (parts[parts.length - 1].toString().endsWith(' ')) {
+                parts.push(' ')
+            }
+            parts.push(...typeListParts(declaration.extendedTypes, options, 'extends'))
+            return parts
+        })
     }
 
     static ofTypeAlias(declaration: DeclarationReflection, options: ExcerptOptions = {}) {
-        const parts: ExcerptPart[] = [indentPart(options), 'export ']
-        if (declaration.name === 'default') {
-            parts.push('default type')
-        } else {
-            parts.push('type ', declaration.name)
-        }
-        parts.push(' = ')
-        if (declaration.type) {
-            parts.push(...declaration.type.visit(typeVisitor, TypeContext.none, options))
-        } else {
-            parts.push('unknown')
-        }
-        return new Excerpt(parts)
+        return new Excerpt(() => {
+            const parts: ExcerptPart[] = [indentPart(options), 'export ']
+            if (declaration.name === 'default') {
+                parts.push('default type')
+            } else {
+                parts.push('type ', declaration.name)
+            }
+            parts.push(' = ')
+            if (declaration.type) {
+                parts.push(...declaration.type.visit(typeVisitor, TypeContext.none, options))
+            } else {
+                parts.push('unknown')
+            }
+            return parts
+        })
     }
 
     static ofFunction(signature: SignatureReflection, options: ExcerptOptions = {}) {
-        const parts: ExcerptPart[] = [indentPart(options), 'export ']
-        if (signature.name === 'default') {
-            parts.push('default function ')
-        } else {
-            parts.push('function ', signature.name)
-        }
-        parts.push(...callSignatureParts(signature, options, ': '))
-        return new Excerpt(parts)
+        return new Excerpt(() => {
+            const parts: ExcerptPart[] = [indentPart(options), 'export ']
+            if (signature.name === 'default') {
+                parts.push('default function ')
+            } else {
+                parts.push('function ', signature.name)
+            }
+            parts.push(...callSignatureParts(signature, options, ': '))
+            return parts
+        })
     }
 
     static ofVariable(declaration: DeclarationReflection, options: ExcerptOptions = {}) {
-        const parts: ExcerptPart[] = [indentPart(options), 'export ']
-        // TODO fix non-literal default
-        if (declaration.name === 'default') {
-            parts.push('default ')
-        } else {
-            if (declaration.flags.isConst) {
-                parts.push('const ')
+        return new Excerpt(() => {
+            const parts: ExcerptPart[] = [indentPart(options), 'export ']
+            // TODO fix non-literal default
+            if (declaration.name === 'default') {
+                parts.push('default ')
             } else {
-                parts.push('let ')
+                if (declaration.flags.isConst) {
+                    parts.push('const ')
+                } else {
+                    parts.push('let ')
+                }
+                parts.push(declaration.name)
+                if (declaration.type?.type === 'literal' && declaration.type.value !== null) {
+                    parts.push(' = ')
+                } else {
+                    parts.push(': ')
+                }
             }
-            parts.push(declaration.name)
-            if (declaration.type?.type === 'literal' && declaration.type.value !== null) {
-                parts.push(' = ')
+            if (declaration.type) {
+                // if (declaration.type.type === 'literal' && declaration.type.value !== null) {
+                //     parts.push(' = ')
+                // } else {
+                //     parts.push(': ')
+                // }
+                parts.push(...declaration.type.visit(typeVisitor, TypeContext.none, options))
             } else {
-                parts.push(': ')
+                parts.push('unknown')
             }
-        }
-        if (declaration.type) {
-            // if (declaration.type.type === 'literal' && declaration.type.value !== null) {
-            //     parts.push(' = ')
-            // } else {
-            //     parts.push(': ')
-            // }
-            parts.push(...declaration.type.visit(typeVisitor, TypeContext.none, options))
-        } else {
-            parts.push('unknown')
-        }
-        return new Excerpt(parts)
+            return parts
+        })
     }
 }
 
@@ -410,7 +430,6 @@ function getTypePriority(type: SomeType) {
             return -1
         }
         case 'intrinsic': {
-            console.log(type.name)
             if (type.name === 'undefined' || type.name === 'void') {
                 return -5
             }
@@ -586,9 +605,8 @@ const typeVisitor: TypeVisitor<ExcerptPart[], [TypeContext, ExcerptOptions]> = {
     reflection: function (type, context, options) {
         const indented = { ...options, indent: Math.max(options.indent ?? 0, 0) + 1 }
         const space = resolveSpace(options)
-        const parts: (ExcerptPart | ExcerptPart[])[] = [
-            space ? '{\n' + space.repeat(indented.indent) : '{ ',
-        ]
+        const sep = space ? '\n' + space.repeat(indented.indent) : '; '
+
         const allSignatures = type.declaration.getAllSignatures()
         const callSignatures = allSignatures.filter(
             ({ kind }) => kind === ReflectionKind.CallSignature,
@@ -599,50 +617,51 @@ const typeVisitor: TypeVisitor<ExcerptPart[], [TypeContext, ExcerptOptions]> = {
         const indexSignatures = allSignatures.filter(
             ({ kind }) => kind === ReflectionKind.IndexSignature,
         )
-        const sep = space ? '\n' + space.repeat(indented.indent) : '; '
-        for (const signature of constructorSignatures) {
-            parts.push('new ', callSignatureParts(signature, indented, ': '), sep)
-        }
-        for (const signature of callSignatures) {
-            parts.push(callSignatureParts(signature, indented, ': '), sep)
-        }
-        for (const signature of indexSignatures) {
-            parts.push(indexSignatureParts(signature, indented), sep)
-        }
-        if (type.declaration.children && type.declaration.children.length > 0) {
-            for (const child of type.declaration.children) {
-                // TODO consider if tsdoc comments should be shown for reflections
-                if (options.comments && child.comment) {
-                    parts.push('/**', sep, ' * ')
-                    parts.push(commentParts(child.comment, sep + ' * '))
-                    parts.push(sep, ' */', sep)
-                }
-                if (child.kind === ReflectionKind.Property) {
-                    parts.push(propertyParts(child, indented), sep)
-                } else {
-                    for (const signature of child.getNonIndexSignatures()) {
-                        parts.push(memberSignatureParts(signature, indented), sep)
-                    }
-                }
-            }
-        } else if (allSignatures.length === 1 && callSignatures.length === 1) {
+        const children = type.declaration.children ?? []
+
+        if (options.collapse) {
+            return wrap(type, context, ['{ /*...*/ }'])
+        } else if (allSignatures.length === 1 && callSignatures.length === 1 && children.length === 0) {
             // () => type; only if the only signature & member is a call signature
             return wrap(
                 arrowFunctionType,
                 context,
                 callSignatureParts(callSignatures[0], options, ' => '),
             )
-        } else if (parts.length === 1) {
-            return wrap(type, context, ['{}'])
-        }
-        if (options.collapse) {
-            return wrap(type, context, ['{ /*...*/ }'])
-        }
-        if (parts.length > 2) {
+        } else {
+            const parts: (ExcerptPart | ExcerptPart[])[] = []
+            for (const signature of constructorSignatures) {
+                parts.push(commentParts(signature, sep, options))
+                parts.push('new ', callSignatureParts(signature, indented, ': '), sep)
+            }
+            for (const signature of callSignatures) {
+                parts.push(commentParts(signature, sep, options))
+                parts.push(callSignatureParts(signature, indented, ': '), sep)
+            }
+            for (const signature of indexSignatures) {
+                parts.push(commentParts(signature, sep, options))
+                parts.push(indexSignatureParts(signature, indented), sep)
+            }
+            for (const child of children) {
+                if (child.kind === ReflectionKind.Property) {
+                    parts.push(commentParts(child, sep, options))
+                    parts.push(propertyParts(child, indented), sep)
+                } else {
+                    for (const signature of child.getNonIndexSignatures()) {
+                        parts.push(commentParts(signature, sep, options))
+                        parts.push(memberSignatureParts(signature, indented), sep)
+                    }
+                }
+            }
+            if (parts.length === 0) {
+                return wrap(type, context, ['{}'])
+            }
+            // remove the last separator
             parts.pop()
+            const openBrace = space ? '{\n' + space.repeat(indented.indent) : '{ '
+            const closeBrace = space ? '\n' + space.repeat(indented.indent - 1) + '}' : ' }'
+            return wrap(type, context, [openBrace, ...parts, closeBrace])
         }
-        parts.push(space ? '\n' + space.repeat(indented.indent - 1) + '}' : ' }')
-        return wrap(type, context, parts)
     },
     rest: function (type, context, options) {
         return wrap(type, context, [
@@ -919,21 +938,51 @@ function indentPart(options: ExcerptOptions) {
     }
 }
 
-function commentParts(comment: Comment, linePrefix: ExcerptPart | ExcerptPart[]) {
-    const parts = commentContentParts(comment.summary)
-    for (const block of comment.blockTags) {
-        if (parts.length > 0) parts.push('\n\n')
-        parts.push(block.tag, '\n', ...commentContentParts(block.content))
+function commentParts(ref: DeclarationReflection | SignatureReflection, sep: string, options: ExcerptOptions) {
+    if (options.comments === false || !unused(ref.comment)) return []
+    const parts: ExcerptPart[] = []
+    const docs = Docs.of(ref, true)
+    docsBlockParts(docs.summary, null, parts)
+    docsParamBlockParts(docs.typeParams?.members, '@typeParam', parts)
+    docsParamBlockParts(docs.params?.members, '@param', parts)
+    docsBlockParts(docs.defaultValue, '@defaultValue', parts)
+    docsBlockParts(docs.returnValue, '@returns', parts)
+    docsBlockParts(docs.remarks, '@remarks', parts)
+    for (const example of docs.examples ?? []) {
+        docsBlockParts(example, '@example', parts)
     }
-    const modifiers = Array.from(comment.modifierTags).join(' ')
+    // modifiers
+    const modifiers = Array.from(ref.comment.modifierTags).join(' ')
     if (modifiers) {
         if (parts.length > 0) parts.push('\n\n')
         parts.push(modifiers)
     }
-    return replaceLineBreaks(parts, linePrefix)
+    if (parts.length === 0) return []
+    return ['/**', sep, ' * ', ...replaceLineBreaks(parts, sep + ' * '), sep, ' */', sep]
 }
 
-function commentContentParts(content: CommentDisplayPart[]) {
+function docsParamBlockParts(members: readonly DocsBlock[] | undefined, tag: `@${string}`, parts: ExcerptPart[]) {
+    const blocks = members?.filter(block => block.parts.length > 0 && block.heading?.text)
+    if (blocks) {
+        if (parts.length > 0) parts.push('\n')
+        for (const block of blocks) {
+            if (block.heading?.text) {
+                parts.push('\n', tag, ' ', block.heading.text, ' - ', ...commentContentParts(block.parts))
+            }
+        }
+    }
+}
+function docsBlockParts(block: DocsBlock | undefined, tag: `@${string}` | null, parts: ExcerptPart[]) {
+    if (block && block.parts.length > 0) {
+        if (parts.length > 0) parts.push('\n\n')
+        if (tag) {
+            parts.push(tag, '\n')
+        }
+        parts.push(...commentContentParts(block.parts))
+    }
+}
+
+function commentContentParts(content: readonly CommentDisplayPart[]) {
     const parts: ExcerptPart[] = []
     for (const part of content) {
         if (part.kind === 'inline-tag') {

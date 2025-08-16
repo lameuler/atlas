@@ -24,6 +24,7 @@ export interface AtlasOptions {
         base?: string
         entries: string[]
         tsconfig?: string
+        excerptComments?: boolean
         resolveLink?: (id: ReflectionSymbolId) => string | undefined
         entryPath?: (entryName: string, packageName: string) => string | undefined
         releaseInfo?: (
@@ -56,6 +57,7 @@ export default function atlas(options: AtlasOptions): AstroIntegration {
             options.reference.tsconfig,
             config.build.format,
             config.base + '/' + base,
+            options.reference.excerptComments,
             options.reference.resolveLink,
             options.reference.entryPath,
             options.reference.releaseInfo,
